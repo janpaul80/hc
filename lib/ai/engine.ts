@@ -101,7 +101,7 @@ export class AIEngine {
                 prompt: prompt,
                 size: "1024x1024",
                 n: 1
-            }
+            } as any
         });
 
         if (response.status !== "200") throw new Error("Flux Gen Failed");
