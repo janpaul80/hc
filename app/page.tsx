@@ -382,9 +382,22 @@ export default function LandingPage() {
               <div key={plan.name} className={`relative p-8 rounded-3xl border transition-all hover:translate-y-[-8px] flex flex-col ${plan.popular ? 'bg-gradient-to-b from-blue-900/20 to-black border-blue-500/50 scale-105 shadow-2xl shadow-blue-500/10' : 'bg-[#111] border-white/5 shadow-xl'}`}>
                 {plan.popular && <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-blue-600 text-[10px] font-black tracking-widest px-4 py-1 rounded-full uppercase">MOST POPULAR</div>}
                 <h3 className="text-xl font-bold mb-2">{plan.name}</h3>
-                <div className="flex items-baseline gap-1 mb-6">
-                  <span className="text-4xl font-black">${plan.price}</span>
-                  <span className="text-gray-600">/mo</span>
+                <div className="mb-6">
+                  {plan.name === 'Basic' ? (
+                    <div>
+                      <span className="text-sm font-bold text-green-500 uppercase tracking-wider block mb-1">7 Day Free Trial</span>
+                      <div className="flex items-baseline gap-1">
+                        <span className="text-sm text-gray-400">then</span>
+                        <span className="text-4xl font-black">${plan.price}</span>
+                        <span className="text-gray-600">/mo</span>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="flex items-baseline gap-1">
+                      <span className="text-4xl font-black">${plan.price}</span>
+                      <span className="text-gray-600">/mo</span>
+                    </div>
+                  )}
                 </div>
                 <div className={`text-sm font-bold mb-8 uppercase tracking-widest ${plan.color === 'orange' ? 'text-orange-500' : plan.color === 'blue' ? 'text-blue-400' : 'text-purple-400'}`}>
                   {plan.credits} HeftCredits
