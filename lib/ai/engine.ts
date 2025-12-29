@@ -95,7 +95,7 @@ export class AIEngine {
             new AzureKeyCredential(CONFIG.AZURE_MAAS_KEY)
         );
 
-        const response = await client.path("/images/generations").post({
+        const response = await client.path("/images/generations" as any).post({
             body: {
                 model: "flux-2-pro",
                 prompt: prompt,
