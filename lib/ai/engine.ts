@@ -29,22 +29,26 @@ interface AIResponse {
 
 export class AIEngine {
 
-    private static async runGPT5(prompt: string, context: string): Promise<AIResponse> {
-        const client = new AzureOpenAI({
+    private static getAzureClient(deployment: string) {
+        return new AzureOpenAI({
             endpoint: CONFIG.AZURE_OPENAI_ENDPOINT,
             apiKey: CONFIG.AZURE_OPENAI_KEY,
             apiVersion: CONFIG.AZURE_OPENAI_API_VERSION,
-            deployment: process.env.AZURE_DEPLOYMENT_HEFTCODER_ORCHESTRATOR || process.env.AZURE_DEPLOYMENT_GPT51 || "heftcoder-orchestrator",
+            deployment: deployment,
         });
+    }
+
+    private static async runGPT5(prompt: string, context: string): Promise<AIResponse> {
+        const client = this.getAzureClient(process.env.AZURE_DEPLOYMENT_HEFTCODER_ORCHESTRATOR || process.env.AZURE_DEPLOYMENT_GPT51 || "heftcoder-orchestrator");
 
         const response = await client.chat.completions.create({
-            model: "gpt-5.1",
             messages: [
                 { role: "system", content: "You are HeftCoder, an expert full-stack builder. Return ONLY valid JSON representing file changes." },
                 { role: "system", content: `Context: ${context}` },
                 { role: "user", content: prompt },
             ],
             response_format: { type: "json_object" },
+            model: "", // AOAI handles this via deployment in path
         });
 
         return {
@@ -57,81 +61,73 @@ export class AIEngine {
     }
 
     private static async runMaaS(modelId: string, prompt: string, context: string): Promise<AIResponse> {
-        const client = ModelClient(
-            CONFIG.AZURE_MAAS_ENDPOINT,
-            new AzureKeyCredential(CONFIG.AZURE_MAAS_KEY)
-        );
-
         const deploymentMap: Record<string, string> = {
             "grok-4": process.env.AZURE_DEPLOYMENT_GROK || "grok-4-fast-reasoning",
             "deepseek-v3.1": process.env.AZURE_DEPLOYMENT_DEEPSEEK || "DeepSeek-V3.2",
-            "mistral-medium": process.env.AZURE_DEPLOYMENT_MISTRAL_MEDIUM || "mistral-medium-2505",
+            "mistral-medium": process.env.AZURE_DEPLOYMENT_MISTRAL_MEDIUM || "Mistral-Large-3", // Fallback to Large if Medium not deployed
             "mistral-large": process.env.AZURE_DEPLOYMENT_MISTRAL_LARGE || "Mistral-Large-3",
             "codestral": process.env.AZURE_DEPLOYMENT_CODESTRAL || process.env.AZURE_DEPLOYMENT_MISTRAL || "Codestral-2501",
             "llama-4": process.env.AZURE_DEPLOYMENT_LLAMA_MAVERICK || process.env.AZURE_DEPLOYMENT_LLAMA || "Llama-4-Maverick-17B-128E-Instruct-FP8",
             "kimi-k2": process.env.AZURE_DEPLOYMENT_KIMI || process.env.AZURE_DEPLOYMENT_GPT51 || "Kimi-K2-Thinking"
         };
 
-        const response = await client.path("/chat/completions").post({
-            body: {
-                model: deploymentMap[modelId],
+        const deploymentName = deploymentMap[modelId];
+        const client = this.getAzureClient(deploymentName);
+
+        try {
+            const response = await client.chat.completions.create({
                 messages: [
                     { role: "system", content: "You are a coding assistant. Return valid JSON only. If you are a reasoning model, finish your internal thinking before outputting the final JSON." },
                     { role: "user", content: `Context: ${context} \n\n Task: ${prompt}` }
                 ],
                 temperature: (modelId === "grok-4" || modelId === "llama-4" || modelId === "kimi-k2") ? 0.3 : 0.1,
-                max_tokens: 4096
-            }
-        });
+                max_tokens: 4096,
+                model: "", // AOAI handles this via deployment in path
+            });
 
-        if (response.status !== "200") {
-            const errorBody = response.body as any;
-            const errorMessage = typeof errorBody === 'object'
-                ? (errorBody?.error?.message || errorBody?.error || JSON.stringify(errorBody))
-                : errorBody;
-            throw new Error(`MaaS Error: ${errorMessage}`);
+            let raw = response.choices[0].message.content || "";
+            // Reasoning models cleanup
+            raw = raw.replace(/<thinking>[\s\S]*?<\/thinking>/g, "").trim();
+            raw = raw.replace(/```json/g, "").replace(/```/g, "");
+
+            return {
+                content: raw,
+                usage: response.usage ? {
+                    inputTokenCount: response.usage.prompt_tokens,
+                    outputTokenCount: response.usage.completion_tokens
+                } : undefined,
+            };
+        } catch (error: any) {
+            const errorMessage = error?.response?.body
+                ? JSON.stringify(error.response.body)
+                : (error.message || "Unknown Azure Error");
+            throw new Error(`MaaS Error [${deploymentName}]: ${errorMessage}`);
         }
-
-        let raw = (response.body as any).choices[0].message.content;
-        // Reasoning models cleanup
-        raw = raw.replace(/<thinking>[\s\S]*?<\/thinking>/g, "").trim();
-        raw = raw.replace(/```json/g, "").replace(/```/g, "");
-
-        return {
-            content: raw,
-            usage: (response.body as any).usage
-        };
     }
 
     private static async runFlux(prompt: string): Promise<AIResponse> {
-        const client = ModelClient(
-            CONFIG.AZURE_MAAS_ENDPOINT,
-            new AzureKeyCredential(CONFIG.AZURE_MAAS_KEY)
-        );
+        const deploymentName = process.env.AZURE_DEPLOYMENT_FLUX || "FLUX.2-pro";
+        const client = this.getAzureClient(deploymentName);
 
-        const response = await client.path("/images/generations" as any).post({
-            body: {
-                model: process.env.AZURE_DEPLOYMENT_FLUX || "FLUX.2-pro",
+        try {
+            const response = await client.images.generate({
                 prompt: prompt,
                 size: "1024x1024",
-                n: 1
-            } as any
-        });
+                n: 1,
+                model: "", // AOAI handles this via deployment in path
+            });
 
-        if (response.status !== "200") throw new Error("Flux Gen Failed");
-
-        return { content: JSON.stringify({ url: (response.body as any).data[0].url }) };
+            return { content: JSON.stringify({ url: response.data[0].url }) };
+        } catch (error: any) {
+            throw new Error(`Flux Gen Failed [${deploymentName}]: ${error.message}`);
+        }
     }
 
     private static async runSora(prompt: string): Promise<AIResponse> {
-        const client = new AzureOpenAI({
-            endpoint: CONFIG.AZURE_OPENAI_ENDPOINT,
-            apiKey: CONFIG.AZURE_OPENAI_KEY,
-            apiVersion: CONFIG.AZURE_OPENAI_API_VERSION,
-            deployment: process.env.AZURE_DEPLOYMENT_SORA || "sora",
-        });
-
-        return { content: JSON.stringify({ url: "#", message: "Sora video generation (Mock: waiting for Azure endpoint)" }) };
+        const deploymentName = process.env.AZURE_DEPLOYMENT_SORA || "sora";
+        // Sora on AOAI typically uses a specific preview SDK or endpoint, 
+        // but for now we follow the same deployment pattern.
+        return { content: JSON.stringify({ url: "#", message: `Sora video generation (Mock: using deployment ${deploymentName})` }) };
     }
 
     public static async generate(model: ModelID, prompt: string, fileContext: any): Promise<AIResponse> {
