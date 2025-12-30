@@ -34,7 +34,7 @@ export class AIEngine {
             endpoint: CONFIG.AZURE_OPENAI_ENDPOINT,
             apiKey: CONFIG.AZURE_OPENAI_KEY,
             apiVersion: CONFIG.AZURE_OPENAI_API_VERSION,
-            deployment: process.env.AZURE_DEPLOYMENT_HEFTCODER_ORCHESTRATOR || process.env.AZURE_DEPLOYMENT_GPT51 || "Kimi-K2-Thinking",
+            deployment: process.env.AZURE_DEPLOYMENT_HEFTCODER_ORCHESTRATOR || process.env.AZURE_DEPLOYMENT_GPT51 || "heftcoder-orchestrator",
         });
 
         const response = await client.chat.completions.create({
@@ -66,7 +66,7 @@ export class AIEngine {
             "grok-4": process.env.AZURE_DEPLOYMENT_GROK || "grok-4-fast-reasoning",
             "deepseek-v3.1": process.env.AZURE_DEPLOYMENT_DEEPSEEK || "DeepSeek-V3.2",
             "mistral-medium": process.env.AZURE_DEPLOYMENT_MISTRAL_MEDIUM || "mistral-medium-2505",
-            "mistral-large": process.env.AZURE_DEPLOYMENT_MISTRAL_LARGE || "mistra-large-3",
+            "mistral-large": process.env.AZURE_DEPLOYMENT_MISTRAL_LARGE || "Mistral-Large-3",
             "codestral": process.env.AZURE_DEPLOYMENT_CODESTRAL || process.env.AZURE_DEPLOYMENT_MISTRAL || "Codestral-2501",
             "llama-4": process.env.AZURE_DEPLOYMENT_LLAMA_MAVERICK || process.env.AZURE_DEPLOYMENT_LLAMA || "Llama-4-Maverick-17B-128E-Instruct-FP8",
             "kimi-k2": process.env.AZURE_DEPLOYMENT_KIMI || process.env.AZURE_DEPLOYMENT_GPT51 || "Kimi-K2-Thinking"
@@ -111,7 +111,7 @@ export class AIEngine {
 
         const response = await client.path("/images/generations" as any).post({
             body: {
-                model: process.env.AZURE_DEPLOYMENT_FLUX || "flux-2-pro",
+                model: process.env.AZURE_DEPLOYMENT_FLUX || "FLUX.2-pro",
                 prompt: prompt,
                 size: "1024x1024",
                 n: 1
@@ -124,9 +124,14 @@ export class AIEngine {
     }
 
     private static async runSora(prompt: string): Promise<AIResponse> {
-        // Placeholder for Sora video generation as Azure deployment
-        // Assuming it follows a similar pattern to images or a specific endpoint
-        return { content: JSON.stringify({ url: "#", message: "Sora video generation initiated (Mock)" }) };
+        const client = new AzureOpenAI({
+            endpoint: CONFIG.AZURE_OPENAI_ENDPOINT,
+            apiKey: CONFIG.AZURE_OPENAI_KEY,
+            apiVersion: CONFIG.AZURE_OPENAI_API_VERSION,
+            deployment: process.env.AZURE_DEPLOYMENT_SORA || "sora",
+        });
+
+        return { content: JSON.stringify({ url: "#", message: "Sora video generation (Mock: waiting for Azure endpoint)" }) };
     }
 
     public static async generate(model: ModelID, prompt: string, fileContext: any): Promise<AIResponse> {
