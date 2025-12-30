@@ -1,31 +1,90 @@
-// ... imports
+"use client";
 import { useState, useRef, useEffect } from "react";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { SignInButton, UserButton, useUser, useClerk, useAuth } from "@clerk/nextjs";
+import { Header } from "@/components/marketing/Header";
+import { Footer } from "@/components/marketing/Footer";
 import {
+  Paperclip,
+  Github,
+  Globe,
+  ArrowRight,
+  RefreshCw,
+  Music,
+  Cpu,
+  Cookie,
+  Sparkles,
+  Zap,
+  Image,
+  FileText,
+  Link2,
+  ChevronDown,
+  AudioWaveform,
   X,
   Code2,
   Rocket,
   CheckCircle,
   Loader2,
   MessageSquare,
-  MessageCircle,
-  Github,
-  FileText,
-  Zap,
-  Image,
-  Music,
-  Cpu,
-  Cookie,
-  Sparkles
+  MessageCircle
 } from "lucide-react";
-// ... other imports
-import { Toaster, toast } from 'sonner'; // Assuming sonner is installed, otherwise usage of simple alert or existing toast if available.
-// If sonner is not available, I'll use a simple state-based notification or just console.log for now, 
-// checking package.json would be ideal but user wants this "enabled". 
-// I will implement a custom simple Toast component inside the page for zero-dependency feedback if needed, 
-// OR simpler: use `window.alert` or just change UI state.
-// Let's stick to UI state changes for "Connected".
 
-// ... existing code ...
+// Model list matching the "vibe" design
+const models = [
+  { id: "gpt-5.1", name: "ChatGPT 5.1", provider: "openai", pro: true },
+  { id: "claude-sonnet-4.5", name: "Claude Sonnet 4.5", provider: "anthropic", pro: true },
+  { id: "grok-4", name: "Grok 4 (thinking)", provider: "xai", pro: true },
+  { id: "deepseek-v3", name: "DeepSeek v3", provider: "deepseek", pro: false },
+  { id: "mistral-medium", name: "Mistral Medium", provider: "mistral", pro: false },
+  { id: "flux.2-pro", name: "Flux.2-Pro", provider: "flux", pro: true },
+];
+
+const ModelIcon = ({ provider }: { provider: string }) => {
+  switch (provider) {
+    case 'anthropic':
+      return (
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+          <path d="M12 2L4 18H7.5L9.5 13.5H14.5L16.5 18H20L12 2ZM12 7.5L13.8 11.5H10.2L12 7.5Z" fill="#ff7f50" />
+        </svg>
+      );
+    case 'openai':
+      return (
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+          <path d="M22.2819 9.8211a5.9847 5.9847 0 0 0-.5153-4.9066 6.0462 6.0462 0 0 0-4.445-2.9155 6.0073 6.0073 0 0 0-5.6381 2.3848 6.0134 6.0134 0 0 0-5.4505-1.0888 6.0524 6.0524 0 0 0-4.0026 3.4936 6.0073 6.0073 0 0 0 .8093 6.2202 5.9847 5.9847 0 0 0 .5154 4.9056 6.0462 6.0462 0 0 0 4.4451 2.9155 6.0072 6.0072 0 0 0 5.638-2.3858 6.0134 6.0134 0 0 0 5.4515 1.0888 6.0524 6.0524 0 0 0 4.0026-3.4936 6.0073 6.0073 0 0 0-.8094-6.2202ZM12.0947 15.6637l-1.339-1.339s.0232-.0163.064-.0408l2.0543-1.1856c.1537-.0897.2842-.217.3789-.3684l1.339-2.1265s.0337-.0245.0932-.0164l2.1266 1.339s.0163.0245.0163.064l.0163 2.502c-.001.1711-.0618.3364-.1714.4716L15.341 16.326s-.0245.0337-.064.049l-3.2642 .0163s-.0163 0-.0163-.0163V15.6637Zm-.2082-1.3061-2.1265-1.339s-.0163-.0245-.0163-.064l.0163-4.098c.002-.1711.0628-.3364.1724-.4716L11.3344 7.221s.0245-.0337.064-.049l2.1265 1.339s.0163.0245.0163.064l-.0163 4.098c-.002.1711-.0628.3364-.1724.4716l-1.339 1.1857s-.0246.0337-.064.049l-.048-.0245ZM6.6579 16.326l-1.339-2.1265s-.0245-.0337-.0163-.0933l1.1857-1.339s.0337-.0245.049-.0163l4.098 2.1265s.0245.0163.0245.064l1.339 2.1265s.0245.0337.0163.0932l-1.1857 1.339s-.0337.0245-.049.0164L6.6579 16.326Zm-.2082-2.3333-2.1265-1.339s-.0163-.0245-.0163-.064l.0163-4.098c.002-.1711.0628-.3364.1724-.4716l1.339-1.1857s.0245-.0337.064-.049l2.1265 1.339s.0163.0245.0163.064l-.0163 4.098c-.002.1711-.0628.3364-.1724.4716l-1.339 1.1857s-.0245.0337-.064.049l-.048-.0245ZM11.1224 4.6579l1.339 2.1265s.0245.0337.0163.0932l-1.1856 1.339s-.0337.0245-.049.0164L7.1461 6.1065s-.0245-.0163-.0245-.064L5.7826 3.916s-.0245-.0337-.0163-.0932l1.1856-1.3389s.0337-.0245.049-.0164L10.9714 4.542l.151.1159Z" fill="white" />
+        </svg>
+      );
+    case 'deepseek':
+      return (
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+          <circle cx="12" cy="12" r="10" fill="#3B82F6" />
+          <path d="M12 6C8.686 6 6 8.686 6 12C6 15.314 8.686 18 12 18C15.314 18 18 15.314 18 12C18 8.686 15.314 6 12 6ZM12 16C9.791 16 8 14.209 8 12C8 9.791 9.791 8 12 8C14.209 8 16 9.791 16 12C16 14.209 14.209 16 12 16Z" fill="white" />
+        </svg>
+      );
+    case 'mistral':
+      return (
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+          <path d="M12 2L4 22L12 18L20 22L12 2Z" fill="#f97316" />
+        </svg>
+      );
+    case 'flux':
+      return (
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+          <rect x="3" y="3" width="18" height="18" rx="2" fill="#8B5CF6" />
+          <circle cx="8.5" cy="8.5" r="1.5" fill="white" />
+          <path d="M21 15L16 10L5 21" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+        </svg>
+      );
+    case 'xai':
+      return (
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+          <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231 5.451-6.231zm-1.161 17.52h1.833L7.084 4.126H5.117L17.083 19.77z" fill="white" />
+        </svg>
+      );
+    default:
+      return <div className="w-5 h-5 rounded-full bg-gray-500 flex-shrink-0" />;
+  }
+};
 
 const ConnectorsModal = ({ onClose }: { onClose: () => void }) => {
   const [connected, setConnected] = useState<Record<string, boolean>>({});
@@ -36,7 +95,7 @@ const ConnectorsModal = ({ onClose }: { onClose: () => void }) => {
 
   const apps = [
     { id: 'github', name: 'GitHub', icon: Github, color: 'text-white' },
-    { id: 'slack', name: 'Slack', icon: MessageSquare, color: 'text-purple-400' }, // customized icon mapping below
+    { id: 'slack', name: 'Slack', icon: MessageSquare, color: 'text-purple-400' },
     { id: 'notion', name: 'Notion', icon: FileText, color: 'text-gray-200' },
     { id: 'linear', name: 'Linear', icon: Zap, color: 'text-blue-400' },
     { id: 'discord', name: 'Discord', icon: MessageCircle, color: 'text-indigo-400' },
@@ -66,8 +125,8 @@ const ConnectorsModal = ({ onClose }: { onClose: () => void }) => {
               <button
                 onClick={() => toggleConnection(app.id)}
                 className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${connected[app.id]
-                  ? 'bg-green-500/20 text-green-400 border border-green-500/50'
-                  : 'bg-white/10 text-white hover:bg-white/20 border border-transparent'
+                    ? 'bg-green-500/20 text-green-400 border border-green-500/50'
+                    : 'bg-white/10 text-white hover:bg-white/20 border border-transparent'
                   }`}
               >
                 {connected[app.id] ? 'Connected' : 'Connect'}
@@ -88,58 +147,211 @@ const ConnectorsModal = ({ onClose }: { onClose: () => void }) => {
   );
 };
 
-// ... inside LandingPage component ...
+export default function LandingPage() {
+  const router = useRouter();
+  const { openSignIn } = useClerk();
+  const { isSignedIn, user } = useUser();
 
-const fileInputRef = useRef<HTMLInputElement>(null);
-const [fileName, setFileName] = useState<string | null>(null);
-const [isGithubConnected, setIsGithubConnected] = useState(false);
+  const [prompt, setPrompt] = useState('');
+  const [selectedModel, setSelectedModel] = useState('gpt-5.1');
+  const [showModelDropdown, setShowModelDropdown] = useState(false);
+  const [showAttachDropdown, setShowAttachDropdown] = useState(false);
+  const [showConnectorsModal, setShowConnectorsModal] = useState(false);
+  const [loadingPlan, setLoadingPlan] = useState<string | null>(null);
+  const [isGithubConnected, setIsGithubConnected] = useState(false);
 
-const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-  const file = e.target.files?.[0];
-  if (file) {
-    setFileName(file.name);
-    setPrompt(prev => prev + `\n[Attached: ${file.name}]`);
+  const modelDropdownRef = useRef<HTMLDivElement>(null);
+  const attachDropdownRef = useRef<HTMLDivElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (modelDropdownRef.current && !modelDropdownRef.current.contains(e.target as Node)) {
+        setShowModelDropdown(false);
+      }
+      if (attachDropdownRef.current && !attachDropdownRef.current.contains(e.target as Node)) {
+        setShowAttachDropdown(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  const handleUpgrade = async (plan: string) => {
+    if (!isSignedIn) {
+      openSignIn();
+      return;
+    }
+    setLoadingPlan(plan);
+    try {
+      const response = await fetch("/api/stripe/checkout", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          plan,
+          userId: user?.id,
+          userEmail: user?.emailAddresses[0]?.emailAddress,
+        }),
+      });
+      const data = await response.json();
+      if (data.url) {
+        window.location.href = data.url;
+      }
+    } catch (error) {
+      console.error("Upgrade error:", error);
+    } finally {
+      setLoadingPlan(null);
+    }
+  };
+
+  const getSelectedModelName = () => {
+    const model = models.find(m => m.id === selectedModel);
+    return model ? model.name : 'ChatGPT 5.1';
+  };
+
+  const handleSend = () => {
+    if (!prompt.trim()) return;
+    if (!isSignedIn) {
+      openSignIn({ forceRedirectUrl: "/dashboard" });
+      return;
+    }
+    router.push(`/dashboard`);
+  };
+
+  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      setPrompt(prev => prev + `\n[Attached: ${file.name}]`);
+      setShowAttachDropdown(false);
+    }
+  };
+
+  const handleGithubConnect = () => {
+    setIsGithubConnected(true);
     setShowAttachDropdown(false);
-  }
-};
+  };
 
-const handleGithubConnect = () => {
-  // Simulate auth flow
-  setIsGithubConnected(true);
-  setShowAttachDropdown(false);
-  // Could trigger a toast here if we had one
-};
+  return (
+    <div className="min-h-screen bg-[#0a0a0a] text-white font-sans selection:bg-orange-500/30 overflow-x-hidden">
+      {/* Background Gradients */}
+      <div className="fixed inset-0 pointer-events-none">
+        <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-orange-900/10 blur-[120px] rounded-full mix-blend-screen" />
+        <div className="absolute top-[20%] right-[-10%] w-[30%] h-[30%] bg-blue-900/10 blur-[100px] rounded-full mix-blend-screen" />
+      </div>
 
-// ... inside JSX ...
+      {/* Connectors Modal */}
+      {showConnectorsModal && <ConnectorsModal onClose={() => setShowConnectorsModal(false)} />}
 
-{/* Connectors Modal */ }
-{ showConnectorsModal && <ConnectorsModal onClose={() => setShowConnectorsModal(false)} /> }
+      {/* Hidden File Input */}
+      <input
+        type="file"
+        ref={fileInputRef}
+        className="hidden"
+        accept="image/*"
+        onChange={handleImageUpload}
+      />
 
-{/* Hidden File Input */ }
-<input
-  type="file"
-  ref={fileInputRef}
-  className="hidden"
-  accept="image/*"
-  onChange={handleImageUpload}
-/>
+      <Header />
 
-{/* ... inside Dropdown ... */ }
-                      <button 
+      <main className="relative z-10 pt-40 px-6 pb-20">
+        <div className="max-w-4xl mx-auto text-center">
+          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-orange-600/10 border border-orange-500/20 text-orange-500 text-xs font-medium mb-8 animate-pulse">
+            <Zap className="w-3 h-3" />
+            <span>v2.1 Orchestrator Mode Live</span>
+          </div>
+          <h1 className="text-5xl md:text-7xl font-bold mb-6 tracking-tight bg-gradient-to-br from-white via-white to-gray-500 bg-clip-text text-transparent leading-[1.1]">
+            Where ideas become <br /> reality
+          </h1>
+          <p className="text-xl text-gray-400 mb-12 font-light max-w-2xl mx-auto">
+            The most powerful autonomous AI agents for building production-ready applications in minutes.
+          </p>
+
+          <div className="bg-[#121212] border border-white/10 rounded-2xl p-4 shadow-2xl backdrop-blur-sm relative group focus-within:border-orange-500/50 transition-all">
+            <textarea
+              value={prompt}
+              onChange={(e) => setPrompt(e.target.value)}
+              placeholder="Build me a SaaS platform for..."
+              className="w-full h-24 bg-transparent text-lg text-white placeholder-gray-600 resize-none focus:outline-none p-2 mb-12"
+            />
+
+            <div className="absolute bottom-4 left-4 right-4 flex justify-between items-center gap-2">
+              <div className="flex items-center gap-1 sm:gap-3">
+                <div className="relative" ref={attachDropdownRef}>
+                  <button
+                    onClick={() => setShowAttachDropdown(!showAttachDropdown)}
+                    className="p-2 text-gray-500 hover:text-white hover:bg-white/5 rounded-lg transition-colors"
+                  >
+                    <Paperclip size={20} />
+                  </button>
+                  {showAttachDropdown && (
+                    <div className="absolute bottom-full mb-2 left-0 bg-[#1a1a1a] border border-white/10 rounded-xl py-2 w-52 shadow-xl z-50">
+                      <button
                         onClick={handleGithubConnect}
                         className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-gray-300 hover:bg-white/5 hover:text-white text-left"
                       >
                         <Github size={18} className={isGithubConnected ? "text-green-500" : ""} />
                         {isGithubConnected ? "GitHub Connected" : "Connect GitHub"}
                       </button>
-                      <button 
+                      <button
                         onClick={() => fileInputRef.current?.click()}
                         className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-gray-300 hover:bg-white/5 hover:text-white text-left"
                       >
                         <Image size={18} /> Import images
                       </button>
-    // ...
+                      <button
+                        onClick={() => { setShowConnectorsModal(true); setShowAttachDropdown(false); }}
+                        className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-gray-300 hover:bg-white/5 hover:text-white text-left"
+                      >
+                        <Link2 size={18} /> Add connectors
+                      </button>
+                    </div>
+                  )}
+                </div>
 
+                <div className="relative" ref={modelDropdownRef}>
+                  <button
+                    onClick={() => setShowModelDropdown(!showModelDropdown)}
+                    className="h-9 px-3 flex items-center gap-2 bg-[#1a1a1a] border border-white/10 rounded-lg text-sm text-gray-300 hover:bg-white/5 transition-colors"
+                  >
+                    <ModelIcon provider={models.find(m => m.id === selectedModel)?.provider || 'anthropic'} />
+                    <span className="hidden sm:inline">{getSelectedModelName()}</span>
+                    <ChevronDown size={14} className={`transition-transform ${showModelDropdown ? 'rotate-180' : ''}`} />
+                  </button>
+                  {showModelDropdown && (
+                    <div className="absolute bottom-full mb-2 left-0 bg-[#1a1a1a] border border-white/10 rounded-xl py-2 w-64 shadow-2xl z-50 overflow-hidden">
+                      {models.map((model) => (
+                        <button
+                          key={model.id}
+                          onClick={() => { setSelectedModel(model.id); setShowModelDropdown(false); }}
+                          className={`w-full flex items-center justify-between px-4 py-2.5 text-sm hover:bg-white/5 transition-colors ${selectedModel === model.id ? 'bg-orange-600/10 text-orange-500' : 'text-gray-300'}`}
+                        >
+                          <div className="flex items-center gap-3">
+                            <ModelIcon provider={model.provider} />
+                            <span>{model.name}</span>
+                          </div>
+                          {model.pro && (
+                            <span className="text-[10px] text-blue-400 bg-blue-500/20 px-1.5 py-0.5 rounded font-bold uppercase tracking-tighter">Pro</span>
+                          )}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              <div className="flex items-center gap-2">
+                <button className="p-2 text-gray-500 hover:text-white transition-colors">
+                  <AudioWaveform size={20} />
+                </button>
+                <button
+                  onClick={handleSend}
+                  className={`p-3 rounded-xl transition-all ${prompt ? 'bg-orange-600 text-white hover:scale-105 shadow-[0_0_20px_rgba(234,88,12,0.4)]' : 'bg-[#252525] text-gray-600'}`}
+                >
+                  <ArrowRight size={20} />
+                </button>
+              </div>
+            </div>
+          </div>
 
           <div className="mt-8 flex flex-wrap justify-center gap-3">
             {[
@@ -158,27 +370,27 @@ const handleGithubConnect = () => {
               </button>
             ))}
           </div>
-        </div >
-      </main >
-
-  {/* Trusted By Carousel - UPDATED TO SCROLL RIGHT */ }
-  < section className = "py-20 border-t border-white/5 bg-[#0a0a0a] overflow-hidden select-none" >
-    <div className="max-w-6xl mx-auto text-center px-6">
-      <p className="text-[10px] text-gray-500 mb-10 uppercase tracking-[0.3em] font-black opacity-50">
-        Trusted by innovators at
-      </p>
-      <div className="relative group">
-        <div className="flex animate-scroll-right gap-16 items-center w-max">
-          {['Coinbase', 'Stripe', 'Vercel', 'Hg', 'Oscar', 'ARK Invest', 'Zillow', 'Microsoft', 'Coinbase', 'Stripe', 'Vercel', 'Hg', 'Oscar', 'ARK Invest', 'Zillow', 'Microsoft'].map((logo, i) => (
-            <span key={`${logo}-${i}`} className="text-2xl font-black text-white/20 whitespace-nowrap hover:text-orange-500/50 transition-colors duration-500">{logo}</span>
-          ))}
         </div>
-      </div>
-    </div>
-      </section >
+      </main>
 
-  {/* Orchestrator Banner */ }
-  < section id = "features" className = "py-24 px-6 bg-gradient-to-b from-orange-600 to-orange-700 relative overflow-hidden" >
+      {/* Trusted By Carousel */}
+      <section className="py-20 border-t border-white/5 bg-[#0a0a0a] overflow-hidden select-none">
+        <div className="max-w-6xl mx-auto text-center px-6">
+          <p className="text-[10px] text-gray-500 mb-10 uppercase tracking-[0.3em] font-black opacity-50">
+            Trusted by innovators at
+          </p>
+          <div className="relative group">
+            <div className="flex animate-scroll-right gap-16 items-center w-max">
+              {['Coinbase', 'Stripe', 'Vercel', 'Hg', 'Oscar', 'ARK Invest', 'Zillow', 'Microsoft', 'Coinbase', 'Stripe', 'Vercel', 'Hg', 'Oscar', 'ARK Invest', 'Zillow', 'Microsoft'].map((logo, i) => (
+                <span key={`${logo}-${i}`} className="text-2xl font-black text-white/20 whitespace-nowrap hover:text-orange-500/50 transition-colors duration-500">{logo}</span>
+              ))}
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Orchestrator Banner */}
+      <section id="features" className="py-24 px-6 bg-gradient-to-b from-orange-600 to-orange-700 relative overflow-hidden">
         <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/carbon-fibre.png')] opacity-10" />
         <div className="max-w-6xl mx-auto grid md:grid-cols-2 gap-12 items-center relative z-10">
           <div className="bg-[#0a0a0a] rounded-2xl p-8 border border-white/10 shadow-[0_0_50px_rgba(0,0,0,0.5)]">
@@ -217,77 +429,77 @@ const handleGithubConnect = () => {
             </Link>
           </div>
         </div>
-      </section >
+      </section>
 
-  {/* Pricing Section */ }
-  < section id = "pricing" className = "py-24 px-6 bg-[#050505]" >
-    <div className="max-w-6xl mx-auto">
-      <div className="text-center mb-16">
-        <h2 className="text-4xl font-bold mb-4">Choose Your Plan</h2>
-        <p className="text-gray-500 max-w-lg mx-auto">AI-powered coding with transparent pricing. Credits reset monthly. No surprise overages.</p>
-      </div>
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-        {[
-          {
-            name: 'Basic', price: '9', credits: '10,000',
-            features: ['GPT-5.1 Orchestrator', 'Auto-Save Projects', 'Public Workspaces'],
-            color: 'orange'
-          },
-          {
-            name: 'Pro', price: '25', credits: '50,000', popular: true,
-            features: ['VIBE Multi-Agent Mode', 'Private Workspaces', 'High-Power Models', 'Flux.2 PRO Image Gen'],
-            color: 'blue'
-          },
-          {
-            name: 'Studio', price: '59', credits: '150,000',
-            features: ['Full Orchestration', 'Smart Model Routing', 'Team Workspaces', 'Priority Compute'],
-            color: 'purple'
-          }
-        ].map((plan, i) => (
-          <div key={plan.name} className={`relative p-8 rounded-3xl border transition-all hover:translate-y-[-8px] flex flex-col ${plan.popular ? 'bg-gradient-to-b from-blue-900/20 to-black border-blue-500/50 scale-105 shadow-2xl shadow-blue-500/10' : 'bg-[#111] border-white/5 shadow-xl'}`}>
-            {plan.popular && <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-blue-600 text-[10px] font-black tracking-widest px-4 py-1 rounded-full uppercase">MOST POPULAR</div>}
-            <h3 className="text-xl font-bold mb-2">{plan.name}</h3>
-            <div className="mb-6">
-              {plan.name === 'Basic' ? (
-                <div>
-                  <span className="text-sm font-bold text-green-500 uppercase tracking-wider block mb-1">7 Day Free Trial</span>
-                  <div className="flex items-baseline gap-1">
-                    <span className="text-sm text-gray-400">then</span>
-                    <span className="text-4xl font-black">${plan.price}</span>
-                    <span className="text-gray-600">/mo</span>
-                  </div>
-                </div>
-              ) : (
-                <div className="flex items-baseline gap-1">
-                  <span className="text-4xl font-black">${plan.price}</span>
-                  <span className="text-gray-600">/mo</span>
-                </div>
-              )}
-            </div>
-            <div className={`text-sm font-bold mb-8 uppercase tracking-widest ${plan.color === 'orange' ? 'text-orange-500' : plan.color === 'blue' ? 'text-blue-400' : 'text-purple-400'}`}>
-              {plan.credits} HeftCredits
-            </div>
-            <ul className="space-y-4 mb-10 flex-1">
-              {plan.features.map(f => (
-                <li key={f} className="flex gap-3 text-sm text-gray-400">
-                  <CheckCircle className="w-5 h-5 text-orange-500 shrink-0" /> {f}
-                </li>
-              ))}
-            </ul>
-            <button
-              onClick={() => handleUpgrade(plan.name)}
-              disabled={!!loadingPlan}
-              className={`w-full py-4 rounded-xl font-black transition-all flex items-center justify-center gap-2 ${plan.popular ? 'bg-blue-600 hover:bg-blue-700 text-white' : plan.name === 'Studio' ? 'bg-purple-600 hover:bg-purple-700 text-white' : 'bg-white/5 hover:bg-white/10 text-white'}`}
-            >
-              {loadingPlan === plan.name ? <Loader2 className="w-5 h-5 animate-spin" /> : `Choose ${plan.name}`}
-            </button>
+      {/* Pricing Section */}
+      <section id="pricing" className="py-24 px-6 bg-[#050505]">
+        <div className="max-w-6xl mx-auto">
+          <div className="text-center mb-16">
+            <h2 className="text-4xl font-bold mb-4" id="pricing-title">Choose Your Plan</h2>
+            <p className="text-gray-500 max-w-lg mx-auto">AI-powered coding with transparent pricing. Credits reset monthly. No surprise overages.</p>
           </div>
-        ))}
-      </div>
-    </div>
-      </section >
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+            {[
+              {
+                name: 'Basic', price: '9', credits: '10,000',
+                features: ['GPT-5.1 Orchestrator', 'Auto-Save Projects', 'Public Workspaces'],
+                color: 'orange'
+              },
+              {
+                name: 'Pro', price: '25', credits: '50,000', popular: true,
+                features: ['VIBE Multi-Agent Mode', 'Private Workspaces', 'High-Power Models', 'Flux.2 PRO Image Gen'],
+                color: 'blue'
+              },
+              {
+                name: 'Studio', price: '59', credits: '150,000',
+                features: ['Full Orchestration', 'Smart Model Routing', 'Team Workspaces', 'Priority Compute'],
+                color: 'purple'
+              }
+            ].map((plan, i) => (
+              <div key={plan.name} className={`relative p-8 rounded-3xl border transition-all hover:translate-y-[-8px] flex flex-col ${plan.popular ? 'bg-gradient-to-b from-blue-900/20 to-black border-blue-500/50 scale-105 shadow-2xl shadow-blue-500/10' : 'bg-[#111] border-white/5 shadow-xl'}`}>
+                {plan.popular && <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-blue-600 text-[10px] font-black tracking-widest px-4 py-1 rounded-full uppercase">MOST POPULAR</div>}
+                <h3 className="text-xl font-bold mb-2">{plan.name}</h3>
+                <div className="mb-6">
+                  {plan.name === 'Basic' ? (
+                    <div>
+                      <span className="text-sm font-bold text-green-500 uppercase tracking-wider block mb-1">7 Day Free Trial</span>
+                      <div className="flex items-baseline gap-1">
+                        <span className="text-sm text-gray-400">then</span>
+                        <span className="text-4xl font-black">${plan.price}</span>
+                        <span className="text-gray-600">/mo</span>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="flex items-baseline gap-1">
+                      <span className="text-4xl font-black">${plan.price}</span>
+                      <span className="text-gray-600">/mo</span>
+                    </div>
+                  )}
+                </div>
+                <div className={`text-sm font-bold mb-8 uppercase tracking-widest ${plan.color === 'orange' ? 'text-orange-500' : plan.color === 'blue' ? 'text-blue-400' : 'text-purple-400'}`}>
+                  {plan.credits} HeftCredits
+                </div>
+                <ul className="space-y-4 mb-10 flex-1">
+                  {plan.features.map(f => (
+                    <li key={f} className="flex gap-3 text-sm text-gray-400">
+                      <CheckCircle className="w-5 h-5 text-orange-500 shrink-0" /> {f}
+                    </li>
+                  ))}
+                </ul>
+                <button
+                  onClick={() => handleUpgrade(plan.name)}
+                  disabled={!!loadingPlan}
+                  className={`w-full py-4 rounded-xl font-black transition-all flex items-center justify-center gap-2 ${plan.popular ? 'bg-blue-600 hover:bg-blue-700 text-white' : plan.name === 'Studio' ? 'bg-purple-600 hover:bg-purple-700 text-white' : 'bg-white/5 hover:bg-white/10 text-white'}`}
+                >
+                  {loadingPlan === plan.name ? <Loader2 className="w-5 h-5 animate-spin" /> : `Choose ${plan.name}`}
+                </button>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
 
-  <Footer />
-    </div >
+      <Footer />
+    </div>
   );
 }
