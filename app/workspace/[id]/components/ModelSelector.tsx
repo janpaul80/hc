@@ -46,13 +46,29 @@ const MetaIcon = () => (
     </svg>
 );
 
+const KimiIcon = () => (
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M12 2L2 19.5h20L12 2z" fill="#FF4F00" />
+    </svg>
+);
+
+const SoraIcon = () => (
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M22.5 7c0-1.1-.9-2-2-2H3.5c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h17c1.1 0 2-.9 2-2V7zM10 14.5v-5l4.5 2.5-4.5 2.5z" fill="#8B5CF6" />
+    </svg>
+);
+
 const MODELS = [
-    { id: "gpt-5.1", name: "ChatGPT 5.1", icon: OpenAIIcon, color: "text-[#10a37f]", pro: true },
+    { id: "heft-orchestrator", name: "Heft Orchestrator", icon: OpenAIIcon, color: "text-[#10a37f]", pro: true },
+    { id: "codestral", name: "Codestral 2501", icon: MistralIcon, color: "text-orange-400", pro: true },
+    { id: "mistral-large", name: "Mistral Large 3", icon: MistralIcon, color: "text-orange-600", pro: true },
+    { id: "mistral-medium", name: "Mistral Medium", icon: MistralIcon, color: "text-orange-500", pro: false },
     { id: "grok-4", name: "Grok 4 (thinking)", icon: XIcon, color: "text-white", pro: true },
     { id: "deepseek-v3.1", name: "DeepSeek v3.1", icon: DeepSeekIcon, color: "text-blue-500", pro: false },
-    { id: "mistral-medium", name: "Mistral Medium", icon: MistralIcon, color: "text-orange-500", pro: false },
     { id: "llama-4", name: "Llama 4 Maverick", icon: MetaIcon, color: "text-blue-600", pro: true },
+    { id: "kimi-k2", name: "Kimi K2 Thinking", icon: KimiIcon, color: "text-[#FF4F00]", pro: true },
     { id: "flux.2-pro", name: "Flux.2-Pro", icon: FluxIcon, color: "text-purple-500", pro: true },
+    { id: "sora", name: "Sora Video Gen", icon: SoraIcon, color: "text-purple-400", pro: true },
 ];
 
 export function ModelSelector({ value, onChange }: { value: string; onChange: (val: string) => void }) {

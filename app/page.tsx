@@ -32,12 +32,16 @@ import {
 
 // Model list matching the "vibe" design
 const models = [
-  { id: "gpt-5.1", name: "ChatGPT 5.1", provider: "openai", pro: true },
+  { id: "heft-orchestrator", name: "Heft Orchestrator", provider: "openai", pro: true },
+  { id: "codestral", name: "Codestral 2501", provider: "mistral", pro: true },
+  { id: "mistral-large", name: "Mistral Large 3", provider: "mistral", pro: true },
+  { id: "mistral-medium", name: "Mistral Medium", provider: "mistral", pro: false },
   { id: "grok-4", name: "Grok 4 (thinking)", provider: "xai", pro: true },
   { id: "deepseek-v3.1", name: "DeepSeek v3.1", provider: "deepseek", pro: false },
-  { id: "mistral-medium", name: "Mistral Medium", provider: "mistral", pro: false },
   { id: "llama-4", name: "Llama 4 Maverick", provider: "meta", pro: true },
+  { id: "kimi-k2", name: "Kimi K2 Thinking", provider: "kimi", pro: true },
   { id: "flux.2-pro", name: "Flux.2-Pro", provider: "flux", pro: true },
+  { id: "sora", name: "Sora Video Gen", provider: "openai", pro: true },
 ];
 
 const ModelIcon = ({ provider }: { provider: string }) => {
@@ -80,6 +84,12 @@ const ModelIcon = ({ provider }: { provider: string }) => {
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
           <path d="M12 2C6.477 2 2 6.477 2 12s4.477 10 10 10 10-4.477 10-10S17.523 2 12 2zm0 18c-4.411 0-8-3.589-8-8s3.589-8 8-8 8 3.589 8 8-3.589 8-8 8z" fill="#0668E1" />
           <path d="M12 6c-3.313 0-6 2.687-6 6s2.687 6 6 6 6-2.687 6-6-2.687-6-6-6zm0 10c-2.206 0-4-1.794-4-4s1.794-4 4-4 4 1.794 4 4-1.794 4-4 4z" fill="#0668E1" />
+        </svg>
+      );
+    case 'kimi':
+      return (
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+          <path d="M12 2L2 19.5h20L12 2z" fill="#FF4F00" />
         </svg>
       );
     case 'xai':
@@ -160,7 +170,7 @@ export default function LandingPage() {
   const { isSignedIn, user } = useUser();
 
   const [prompt, setPrompt] = useState('');
-  const [selectedModel, setSelectedModel] = useState('gpt-5.1');
+  const [selectedModel, setSelectedModel] = useState('heft-orchestrator');
   const [showModelDropdown, setShowModelDropdown] = useState(false);
   const [showAttachDropdown, setShowAttachDropdown] = useState(false);
   const [showConnectorsModal, setShowConnectorsModal] = useState(false);
@@ -213,7 +223,7 @@ export default function LandingPage() {
 
   const getSelectedModelName = () => {
     const model = models.find(m => m.id === selectedModel);
-    return model ? model.name : 'ChatGPT 5.1';
+    return model ? model.name : 'Heft Orchestrator';
   };
 
   const handleSend = () => {
