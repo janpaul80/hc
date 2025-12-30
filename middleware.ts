@@ -1,7 +1,7 @@
 import { clerkMiddleware, createRouteMatcher } from "@clerk/nextjs/server";
 import { NextResponse } from "next/server";
 
-const isPublicRoute = createRouteMatcher(["/", "/login(.*)", "/signup(.*)", "/api/stripe/webhook", "/about", "/docs", "/api-reference", "/community", "/privacy", "/terms", "/security"]);
+const isPublicRoute = createRouteMatcher(["/", "/login(.*)", "/signup(.*)", "/api/webhooks/stripe", "/about", "/docs", "/api-reference", "/community", "/privacy", "/terms", "/security"]);
 
 export default clerkMiddleware(async (auth, req) => {
     const url = req.nextUrl;
@@ -12,7 +12,7 @@ export default clerkMiddleware(async (auth, req) => {
     const userDomain = process.env.NODE_ENV === "production" ? "nextcoder.icu" : "nextcoder.localhost:3000";
 
     // 2. Check which domain we are on
-    const isAppDomain = hostname === appDomain || hostname.includes("localhost");
+    const isAppDomain = hostname === appDomain || hostname.includes(appDomain) || hostname.includes("localhost");
     const isUserDomain = hostname.includes(userDomain);
 
     // --- SCENARIO A: User visits the Main App (heftcoder.icu or localhost) ---
