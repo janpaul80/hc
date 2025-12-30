@@ -117,6 +117,10 @@ export class AIEngine {
                 model: "", // AOAI handles this via deployment in path
             });
 
+            if (!response.data || response.data.length === 0) {
+                throw new Error("Azure returned no image data");
+            }
+
             return { content: JSON.stringify({ url: response.data[0].url }) };
         } catch (error: any) {
             throw new Error(`Flux Gen Failed [${deploymentName}]: ${error.message}`);
