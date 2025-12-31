@@ -32,6 +32,7 @@ import {
 
 // Model list matching the "vibe" design
 const models = [
+  { id: "claude-4.5-sonnet", name: "Claude 4.5 Sonnet (Vibe)", provider: "anthropic", pro: true },
   { id: "heft-orchestrator", name: "Heft Orchestrator", provider: "openai", pro: true },
   { id: "codestral", name: "Codestral 2501", provider: "mistral", pro: true },
   { id: "mistral-large", name: "Mistral Large 3", provider: "mistral", pro: true },
@@ -86,6 +87,10 @@ const ModelIcon = ({ provider }: { provider: string }) => {
           <path d="M12 6c-3.313 0-6 2.687-6 6s2.687 6 6 6 6-2.687 6-6-2.687-6-6-6zm0 10c-2.206 0-4-1.794-4-4s1.794-4 4-4 4 1.794 4 4-1.794 4-4 4z" fill="#0668E1" />
         </svg>
       );
+    case 'anthropic':
+      return <div className="w-5 h-5 rounded-full bg-orange-500/10 flex items-center justify-center">
+        <div className="w-2.5 h-2.5 rounded-full bg-orange-500 shadow-[0_0_10px_rgba(249,115,22,0.5)]" />
+      </div>;
     case 'kimi':
       return (
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none">

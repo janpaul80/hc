@@ -8,10 +8,13 @@ const CONFIG = {
     AZURE_MAAS_ENDPOINT: (process.env.AZURE_MAAS_ENDPOINT || process.env.AZURE_OPENAI_ENDPOINT)?.replace(/\/+$/, "")!,
     AZURE_MAAS_KEY: process.env.AZURE_MAAS_KEY || process.env.AZURE_OPENAI_KEY || process.env.AZURE_OPENAI_API_KEY!,
     AZURE_OPENAI_API_VERSION: process.env.AZURE_OPENAI_API_VERSION || "2024-02-15-preview",
+    LANGDOCK_API_KEY: process.env.LANGDOCK_API_KEY!,
+    LANGDOCK_ASSISTANT_ID: process.env.LANGDOCK_ASSISTANT_ID!
 };
 
 export type ModelID =
     | "heft-orchestrator"
+    | "claude-4.5-sonnet"
     | "grok-4"
     | "deepseek-v3.1"
     | "mistral-medium"
@@ -134,18 +137,73 @@ export class AIEngine {
         return { content: JSON.stringify({ url: "#", message: `Sora video generation (Mock: using deployment ${deploymentName})` }) };
     }
 
+    private static async runLangdock(prompt: string, context: string): Promise<AIResponse> {
+        try {
+            const response = await fetch("https://api.langdock.com/assistant/v1/chat/completions", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    "Authorization": `Bearer ${CONFIG.LANGDOCK_API_KEY}`
+                },
+                body: JSON.stringify({
+                    assistantId: CONFIG.LANGDOCK_ASSISTANT_ID,
+                    messages: [
+                        { role: "system", content: "You are Claude 4.5 Sonnet, the brain of HeftCoder Pro. ENFORCE NO-PROSE: Return ONLY valid JSON representing file changes. No explanations, no conversation." },
+                        { role: "user", content: `Context: ${context} \n\n Task: ${prompt}` }
+                    ],
+                    model: "claude-4.5-sonnet" // Ensuring the model is explicitly requested if assistant doesn't default
+                })
+            });
+
+            if (!response.ok) {
+                const errText = await response.text();
+                throw new Error(`Langdock API Error: ${errText}`);
+            }
+
+            const data = await response.json();
+            return {
+                content: data.choices[0].message.content || "{}",
+                usage: data.usage
+            };
+        } catch (error: any) {
+            throw new Error(`Langdock Integration Failed: ${error.message}`);
+        }
+    }
+
+    private static parseSafeJSON(str: string): any {
+        try {
+            // Remove markdown formatting if present
+            let clean = str.replace(/```json/g, "").replace(/```/g, "").trim();
+            // Sometimes models add reasoning tags - we already handle that in runMaaS but let's be safe here too
+            clean = clean.replace(/<thinking>[\s\S]*?<\/thinking>/g, "").trim();
+            return JSON.parse(clean);
+        } catch (e) {
+            console.error("Failed to parse AI JSON:", str);
+            throw new Error("AI returned invalid JSON structure");
+        }
+    }
+
     public static async generate(model: ModelID, prompt: string, fileContext: any): Promise<AIResponse> {
         const contextStr = JSON.stringify(fileContext);
 
+        let response: AIResponse;
+
         switch (model) {
+            case "claude-4.5-sonnet":
+                response = await this.runLangdock(prompt, contextStr);
+                break;
+
             case "heft-orchestrator":
-                return this.runGPT5(prompt, contextStr);
+                response = await this.runGPT5(prompt, contextStr);
+                break;
 
             case "flux.2-pro":
-                return this.runFlux(prompt);
+                response = await this.runFlux(prompt);
+                break;
 
             case "sora":
-                return this.runSora(prompt);
+                response = await this.runSora(prompt);
+                break;
 
             case "grok-4":
             case "deepseek-v3.1":
@@ -154,10 +212,24 @@ export class AIEngine {
             case "codestral":
             case "llama-4":
             case "kimi-k2":
-                return this.runMaaS(model, prompt, contextStr);
+                response = await this.runMaaS(model, prompt, contextStr);
+                break;
 
             default:
                 throw new Error("Unsupported Model Selected");
         }
+
+        // Apply mandatory JSON cleaning across all code models (except image/video gen)
+        if (model !== "flux.2-pro" && model !== "sora") {
+            try {
+                // Verify it's parsable, then return the stringified version
+                const parsed = this.parseSafeJSON(response.content);
+                response.content = JSON.stringify(parsed);
+            } catch (e: any) {
+                throw new Error(`Output Validation Failed: ${e.message}`);
+            }
+        }
+
+        return response;
     }
 }

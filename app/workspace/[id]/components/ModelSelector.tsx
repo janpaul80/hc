@@ -59,6 +59,7 @@ const SoraIcon = () => (
 );
 
 const MODELS = [
+    { id: "claude-4.5-sonnet", name: "Claude 4.5 Sonnet (Vibe)", icon: AnthropicIcon, color: "text-[#d97757]", pro: true },
     { id: "heft-orchestrator", name: "Heft Orchestrator", icon: OpenAIIcon, color: "text-[#10a37f]", pro: true },
     { id: "codestral", name: "Codestral 2501", icon: MistralIcon, color: "text-orange-400", pro: true },
     { id: "mistral-large", name: "Mistral Large 3", icon: MistralIcon, color: "text-orange-600", pro: true },
