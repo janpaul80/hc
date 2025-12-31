@@ -59,15 +59,11 @@ const SoraIcon = () => (
 );
 
 const MODELS = [
-    { id: "claude-4.5-sonnet", name: "Claude 4.5 Sonnet (Vibe)", icon: AnthropicIcon, color: "text-[#d97757]", pro: true },
-    { id: "heft-orchestrator", name: "Heft Orchestrator", icon: OpenAIIcon, color: "text-[#10a37f]", pro: true },
-    { id: "codestral", name: "Codestral 2501", icon: MistralIcon, color: "text-orange-400", pro: true },
+    { id: "heftcoder-pro", name: "HeftCoder PRO (Sonnet 4.5)", icon: AnthropicIcon, color: "text-[#d97757]", pro: true },
+    { id: "ui-architect", name: "UI Architect", icon: Code2, color: "text-blue-400", pro: true },
+    { id: "debugger-pro", name: "Debugger Pro", icon: Zap, color: "text-orange-400", pro: true },
+    { id: "general-assistant", name: "General Assistant", icon: Sparkles, color: "text-gray-400", pro: false },
     { id: "mistral-large", name: "Mistral Large 3", icon: MistralIcon, color: "text-orange-600", pro: true },
-    { id: "mistral-medium", name: "Mistral Medium", icon: MistralIcon, color: "text-orange-500", pro: false },
-    { id: "grok-4", name: "Grok 4 (thinking)", icon: XIcon, color: "text-white", pro: true },
-    { id: "deepseek-v3.1", name: "DeepSeek v3.1", icon: DeepSeekIcon, color: "text-blue-500", pro: false },
-    { id: "llama-4", name: "Llama 4 Maverick", icon: MetaIcon, color: "text-blue-600", pro: true },
-    { id: "kimi-k2", name: "Kimi K2 Thinking", icon: KimiIcon, color: "text-[#FF4F00]", pro: true },
     { id: "flux.2-pro", name: "Flux.2-Pro", icon: FluxIcon, color: "text-purple-500", pro: true },
     { id: "sora", name: "Sora Video Gen", icon: SoraIcon, color: "text-purple-400", pro: true },
 ];

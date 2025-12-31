@@ -9,21 +9,21 @@ const CONFIG = {
     AZURE_MAAS_KEY: process.env.AZURE_MAAS_KEY || process.env.AZURE_OPENAI_KEY || process.env.AZURE_OPENAI_API_KEY!,
     AZURE_OPENAI_API_VERSION: process.env.AZURE_OPENAI_API_VERSION || "2024-02-15-preview",
     LANGDOCK_API_KEY: process.env.LANGDOCK_API_KEY!,
-    LANGDOCK_ASSISTANT_ID: process.env.LANGDOCK_ASSISTANT_ID!
+    LANGDOCK_ASSISTANT_ID: process.env.LANGDOCK_ASSISTANT_ID!,
+    LANGDOCK_UI_ARCHITECT_ID: process.env.LANGDOCK_UI_ARCHITECT_ID || process.env.LANGDOCK_ASSISTANT_ID!,
+    LANGDOCK_DEBUGGER_PRO_ID: process.env.LANGDOCK_DEBUGGER_PRO_ID || process.env.LANGDOCK_ASSISTANT_ID!
 };
 
 export type ModelID =
-    | "heft-orchestrator"
+    | "heftcoder-pro"
+    | "ui-architect"
+    | "debugger-pro"
+    | "general-assistant"
     | "claude-4.5-sonnet"
-    | "grok-4"
-    | "deepseek-v3.1"
-    | "mistral-medium"
+    | "heft-orchestrator"
     | "mistral-large"
-    | "codestral"
-    | "llama-4"
-    | "kimi-k2"
-    | "sora"
-    | "flux.2-pro";
+    | "flux.2-pro"
+    | "sora";
 
 interface AIResponse {
     content: string;
@@ -138,22 +138,31 @@ export class AIEngine {
         return { content: JSON.stringify({ url: "#", message: `Sora video generation (Mock: using deployment ${deploymentName})` }) };
     }
 
-    private static async runLangdock(prompt: string, context: string): Promise<AIResponse> {
+    private static async runLangdock(prompt: string, context: string, assistantId?: string, extendedThinking: boolean = false): Promise<AIResponse> {
         try {
+            const body: any = {
+                assistantId: assistantId || CONFIG.LANGDOCK_ASSISTANT_ID,
+                messages: [
+                    { role: "system", content: "You are HeftCoder Pro, the most advanced AI orchestrator. ENFORCE NO-PROSE: Return ONLY valid JSON representing file changes. No explanations." },
+                    { role: "user", content: `Context: ${context} \n\n Task: ${prompt}` }
+                ],
+                model: "claude-4.5-sonnet"
+            };
+
+            if (extendedThinking) {
+                body.thinking = {
+                    type: "enabled",
+                    budget_tokens: 16000
+                };
+            }
+
             const response = await fetch("https://api.langdock.com/assistant/v1/chat/completions", {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",
                     "Authorization": `Bearer ${CONFIG.LANGDOCK_API_KEY}`
                 },
-                body: JSON.stringify({
-                    assistantId: CONFIG.LANGDOCK_ASSISTANT_ID,
-                    messages: [
-                        { role: "system", content: "You are Claude 4.5 Sonnet, the brain of HeftCoder Pro. ENFORCE NO-PROSE: Return ONLY valid JSON representing file changes. No explanations, no conversation." },
-                        { role: "user", content: `Context: ${context} \n\n Task: ${prompt}` }
-                    ],
-                    model: "claude-4.5-sonnet" // Ensuring the model is explicitly requested if assistant doesn't default
-                })
+                body: JSON.stringify(body)
             });
 
             if (!response.ok) {
@@ -162,8 +171,13 @@ export class AIEngine {
             }
 
             const data = await response.json();
+            let content = data.choices[0].message.content || "{}";
+
+            // Strip thinking tags if they leaked into the content
+            content = content.replace(/<thinking>[\s\S]*?<\/thinking>/g, "").trim();
+
             return {
-                content: data.choices[0].message.content || "{}",
+                content,
                 usage: data.usage
             };
         } catch (error: any) {
@@ -190,9 +204,10 @@ export class AIEngine {
         let response: AIResponse;
 
         switch (model) {
+            case "heftcoder-pro":
             case "claude-4.5-sonnet":
                 try {
-                    response = await this.runLangdock(prompt, contextStr);
+                    response = await this.runLangdock(prompt, contextStr, CONFIG.LANGDOCK_ASSISTANT_ID, true);
                 } catch (e: any) {
                     console.error("Vibe Engine (Claude) Failed, Failover to Mistral Large:", e.message);
                     response = await this.runMaaS("mistral-large", prompt, contextStr);
@@ -200,8 +215,16 @@ export class AIEngine {
                 }
                 break;
 
-            case "heft-orchestrator":
-                response = await this.runGPT5(prompt, contextStr);
+            case "ui-architect":
+                response = await this.runLangdock(prompt, contextStr, CONFIG.LANGDOCK_UI_ARCHITECT_ID);
+                break;
+
+            case "debugger-pro":
+                response = await this.runLangdock(prompt, contextStr, CONFIG.LANGDOCK_DEBUGGER_PRO_ID);
+                break;
+
+            case "general-assistant":
+                response = await this.runLangdock(prompt, contextStr, CONFIG.LANGDOCK_ASSISTANT_ID);
                 break;
 
             case "flux.2-pro":
@@ -212,18 +235,16 @@ export class AIEngine {
                 response = await this.runSora(prompt);
                 break;
 
-            case "grok-4":
-            case "deepseek-v3.1":
-            case "mistral-medium":
             case "mistral-large":
-            case "codestral":
-            case "llama-4":
-            case "kimi-k2":
                 response = await this.runMaaS(model, prompt, contextStr);
                 break;
 
+            case "heft-orchestrator":
+                // Deprecated Azure Model
+                throw new Error("Azure OpenAI (Heft Orchestrator) has been deprecated in favor of HeftCoder PRO.");
+
             default:
-                throw new Error("Unsupported Model Selected");
+                throw new Error(`Unsupported Model Selected: ${model}`);
         }
 
         // Apply mandatory JSON cleaning across all code models (except image/video gen)

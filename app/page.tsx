@@ -32,15 +32,11 @@ import {
 
 // Model list matching the "vibe" design
 const models = [
-  { id: "claude-4.5-sonnet", name: "Claude 4.5 Sonnet (Vibe)", provider: "anthropic", pro: true },
-  { id: "heft-orchestrator", name: "Heft Orchestrator", provider: "openai", pro: true },
-  { id: "codestral", name: "Codestral 2501", provider: "mistral", pro: true },
+  { id: "heftcoder-pro", name: "HeftCoder PRO (Sonnet 4.5)", provider: "anthropic", pro: true },
+  { id: "ui-architect", name: "UI Architect", provider: "mistral", pro: true },
+  { id: "debugger-pro", name: "Debugger Pro", provider: "mistral", pro: true },
+  { id: "general-assistant", name: "General Assistant", provider: "anthropic", pro: false },
   { id: "mistral-large", name: "Mistral Large 3", provider: "mistral", pro: true },
-  { id: "mistral-medium", name: "Mistral Medium", provider: "mistral", pro: false },
-  { id: "grok-4", name: "Grok 4 (thinking)", provider: "xai", pro: true },
-  { id: "deepseek-v3.1", name: "DeepSeek v3.1", provider: "deepseek", pro: false },
-  { id: "llama-4", name: "Llama 4 Maverick", provider: "meta", pro: true },
-  { id: "kimi-k2", name: "Kimi K2 Thinking", provider: "kimi", pro: true },
   { id: "flux.2-pro", name: "Flux.2-Pro", provider: "flux", pro: true },
   { id: "sora", name: "Sora Video Gen", provider: "openai", pro: true },
 ];
@@ -175,7 +171,7 @@ export default function LandingPage() {
   const { isSignedIn, user } = useUser();
 
   const [prompt, setPrompt] = useState('');
-  const [selectedModel, setSelectedModel] = useState('heft-orchestrator');
+  const [selectedModel, setSelectedModel] = useState('heftcoder-pro');
   const [showModelDropdown, setShowModelDropdown] = useState(false);
   const [showAttachDropdown, setShowAttachDropdown] = useState(false);
   const [showConnectorsModal, setShowConnectorsModal] = useState(false);
