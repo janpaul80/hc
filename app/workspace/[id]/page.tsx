@@ -93,6 +93,13 @@ export default function Workspace(props: { params: Promise<{ id: string }> }) {
 
             const data = await response.json();
 
+            if (data.failover) {
+                setMessages(prev => [...prev, {
+                    role: "ai",
+                    content: "⚠️ Fail-Safe Mode Active: The primary Vibe engine is currently under heavy load or unavailable. I've automatically switched to Mistral Large (Azure) to ensure your workspace remains functional."
+                }]);
+            }
+
             if (data.imageUrl) {
                 setMessages(prev => [...prev, {
                     role: "ai",
@@ -337,6 +344,7 @@ export default function Workspace(props: { params: Promise<{ id: string }> }) {
                         </ResizablePanel>
                     </ResizablePanelGroup>
                 </div>
+            </div>
         </SandpackProvider>
     );
 }

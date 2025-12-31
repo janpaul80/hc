@@ -28,6 +28,7 @@ export type ModelID =
 interface AIResponse {
     content: string;
     usage?: { inputTokenCount: number; outputTokenCount: number };
+    failover?: boolean;
 }
 
 export class AIEngine {
@@ -190,7 +191,13 @@ export class AIEngine {
 
         switch (model) {
             case "claude-4.5-sonnet":
-                response = await this.runLangdock(prompt, contextStr);
+                try {
+                    response = await this.runLangdock(prompt, contextStr);
+                } catch (e: any) {
+                    console.error("Vibe Engine (Claude) Failed, Failover to Mistral Large:", e.message);
+                    response = await this.runMaaS("mistral-large", prompt, contextStr);
+                    response.failover = true;
+                }
                 break;
 
             case "heft-orchestrator":

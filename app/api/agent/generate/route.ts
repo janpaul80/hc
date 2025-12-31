@@ -83,7 +83,12 @@ export async function POST(req: Request) {
                 .eq("id", userData.id);
         }
 
-        return NextResponse.json({ success: true, changes: content, imageUrl });
+        return NextResponse.json({
+            success: true,
+            changes: content,
+            imageUrl,
+            failover: result.failover
+        });
 
     } catch (error: any) {
         console.error("API Agent Error:", error);
