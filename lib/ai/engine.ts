@@ -149,7 +149,7 @@ export class AIEngine {
                     { role: "system", content: systemInstruction || "You are HeftCoder Pro, the most advanced AI orchestrator. ENFORCE NO-PROSE: Return ONLY valid JSON representing file changes. No explanations." },
                     { role: "user", content: `Context: ${context} \n\n Task: ${prompt}` }
                 ],
-                model: "claude-4.5-sonnet"
+                // model: "claude-4.5-sonnet" // Omit model when assistantId is used to avoid conflicts
             };
 
             if (extendedThinking) {
@@ -170,36 +170,34 @@ export class AIEngine {
 
             if (!response.ok) {
                 const errText = await response.text();
-                throw new Error(`Langdock API Error: ${errText}`);
+                console.error(`Langdock API Error Details [ID: ${body.assistantId}]:`, errText);
+                throw new Error(`Langdock API Error (${response.status}): ${errText}`);
             }
 
             const data = await response.json();
             let content = data.choices[0].message.content || "{}";
-
-            // Strip thinking tags if they leaked into the content
             content = content.replace(/<thinking>[\s\S]*?<\/thinking>/g, "").trim();
 
-            return {
-                content,
-                usage: data.usage
-            };
+            return { content, usage: data.usage };
         } catch (error: any) {
+            console.error("Langdock Connectivity/Runtime Error:", error.message);
             throw new Error(`Langdock Integration Failed: ${error.message}`);
         }
     }
 
     private static async runWatermelon(prompt: string, context: string, assistantId?: string): Promise<AIResponse> {
         try {
-            const response = await fetch("https://public.watermelon.ai/api/v1/chat/completions", {
+            // Using public.watermelon.ai/v1/chat/completions (dropping /api)
+            const response = await fetch("https://public.watermelon.ai/v1/chat/completions", {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",
-                    "Authorization": `Bearer ${CONFIG.WATERMELON_API_KEY}`
+                    "Authorization": `Bearer ${process.env.WATERMELON_SECRET_KEY || CONFIG.WATERMELON_API_KEY}`
                 },
                 body: JSON.stringify({
                     assistantId: assistantId || CONFIG.WATERMELON_PLUS_ID,
                     messages: [
-                        { role: "system", content: "You are HeftCoder Plus (GPT-5.1). You provide creative UI perspectives and robust full-stack code. ENFORCE NO-PROSE: Return ONLY valid JSON." },
+                        { role: "system", content: "You are HeftCoder Plus (GPT-5.1). Return ONLY valid JSON." },
                         { role: "user", content: `Context: ${context} \n\n Task: ${prompt}` }
                     ]
                 })
@@ -207,7 +205,8 @@ export class AIEngine {
 
             if (!response.ok) {
                 const errText = await response.text();
-                throw new Error(`Watermelon API Error: ${errText}`);
+                console.error("Watermelon API Error Details:", errText);
+                throw new Error(`Watermelon API Error (${response.status}): ${errText}`);
             }
 
             const data = await response.json();
@@ -216,6 +215,7 @@ export class AIEngine {
                 usage: data.usage
             };
         } catch (error: any) {
+            console.error("Watermelon Connectivity Error:", error.message);
             throw new Error(`Watermelon Integration Failed: ${error.message}`);
         }
     }
