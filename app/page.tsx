@@ -33,7 +33,7 @@ import {
 // Model list matching the "vibe" design
 const models = [
   { id: "heftcoder-pro", name: "HeftCoder PRO (Sonnet 4.5)", provider: "anthropic", pro: true },
-  { id: "heftcoder-plus", name: "HeftCoder Plus (GPT-5.1)", provider: "openai", pro: true },
+  { id: "heftcoder-plus", name: "HeftCoder Plus (Mistral)", provider: "mistral", pro: true },
   { id: "ui-architect", name: "UI Architect", provider: "mistral", pro: true },
   { id: "debugger-pro", name: "Debugger Pro", provider: "mistral", pro: true },
   { id: "general-assistant", name: "General Assistant", provider: "anthropic", pro: false },

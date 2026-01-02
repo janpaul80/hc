@@ -61,7 +61,7 @@ const SoraIcon = () => (
 
 const MODELS = [
     { id: "heftcoder-pro", name: "HeftCoder PRO (Sonnet 4.5)", icon: AnthropicIcon, color: "text-[#d97757]", pro: true },
-    { id: "heftcoder-plus", name: "HeftCoder Plus (GPT-5.1)", icon: Sparkles, color: "text-blue-400", pro: true },
+    { id: "heftcoder-plus", name: "HeftCoder Plus (Mistral)", icon: MistralIcon, color: "text-orange-400", pro: true },
     { id: "ui-architect", name: "UI Architect", icon: Code2, color: "text-blue-400", pro: true },
     { id: "debugger-pro", name: "Debugger Pro", icon: Zap, color: "text-orange-400", pro: true },
     { id: "general-assistant", name: "General Assistant", icon: Sparkles, color: "text-gray-400", pro: false },

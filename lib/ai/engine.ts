@@ -12,8 +12,8 @@ const CONFIG = {
     LANGDOCK_ASSISTANT_ID: process.env.LANGDOCK_ASSISTANT_ID!,
     LANGDOCK_UI_ARCHITECT_ID: process.env.LANGDOCK_UI_ARCHITECT_ID || process.env.LANGDOCK_ASSISTANT_ID!,
     LANGDOCK_DEBUGGER_PRO_ID: process.env.LANGDOCK_DEBUGGER_PRO_ID || process.env.LANGDOCK_ASSISTANT_ID!,
-    WATERMELON_API_KEY: process.env.WATERMELON_API_KEY!,
-    WATERMELON_PLUS_ID: process.env.WATERMELON_PLUS_ID!
+    MISTRAL_API_KEY: process.env.MISTRAL_API_KEY!,
+    MISTRAL_AGENT_ID: process.env.MISTRAL_AGENT_ID || "ag_019b7df2cec2719aa68ad67ae2bd6927"
 };
 
 export type ModelID =
@@ -192,45 +192,49 @@ export class AIEngine {
         }
     }
 
-    private static async runWatermelon(prompt: string, context: string, assistantId?: string): Promise<AIResponse> {
-        const id = assistantId || CONFIG.WATERMELON_PLUS_ID;
-        const key = process.env.WATERMELON_SECRET_KEY || CONFIG.WATERMELON_API_KEY;
+    private static async runMistral(prompt: string, context: string, agentId?: string): Promise<AIResponse> {
+        const id = agentId || CONFIG.MISTRAL_AGENT_ID;
+        const key = CONFIG.MISTRAL_API_KEY;
 
-        if (!id || id === "HeftCoder Plus" || !key) {
-            throw new Error(`Watermelon Configuration Missing: Ensure 'WATERMELON_PLUS_ID' and 'WATERMELON_API_KEY' are set in Coolify env.`);
+        if (!key) {
+            throw new Error(`Mistral API Key Missing: Ensure 'MISTRAL_API_KEY' is set in Coolify env.`);
         }
 
         try {
-            // Updated Path for Watermelon Ultimate API
-            const response = await fetch("https://public.watermelon.ai/api/v1/ultimate/chat/completions", {
+            const response = await fetch("https://api.mistral.ai/v1/chat/completions", {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",
-                    "Authorization": `Bearer ${process.env.WATERMELON_SECRET_KEY || CONFIG.WATERMELON_API_KEY}`
+                    "Authorization": `Bearer ${key}`
                 },
                 body: JSON.stringify({
-                    assistantId: assistantId || CONFIG.WATERMELON_PLUS_ID,
+                    agent_id: id,
                     messages: [
-                        { role: "system", content: "You are HeftCoder Plus (GPT-5.1). Return ONLY valid JSON." },
+                        { role: "system", content: "You are HeftCoder Plus (Mistral). Return ONLY valid JSON representing file changes." },
                         { role: "user", content: `Context: ${context} \n\n Task: ${prompt}` }
-                    ]
+                    ],
+                    temperature: 0.3,
+                    max_tokens: 2048
                 })
             });
 
             if (!response.ok) {
                 const errText = await response.text();
-                console.error("Watermelon API Error Details:", errText);
-                throw new Error(`Watermelon API Error (${response.status}): ${errText}`);
+                console.error("Mistral API Error Details:", errText);
+                throw new Error(`Mistral API Error (${response.status}): ${errText}`);
             }
 
             const data = await response.json();
             return {
                 content: data.choices[0].message.content || "{}",
-                usage: data.usage
+                usage: data.usage ? {
+                    inputTokenCount: data.usage.prompt_tokens,
+                    outputTokenCount: data.usage.completion_tokens
+                } : undefined
             };
         } catch (error: any) {
-            console.error("Watermelon Connectivity Error:", error.message);
-            throw new Error(`Watermelon Integration Failed: ${error.message}`);
+            console.error("Mistral Connectivity Error:", error.message);
+            throw new Error(`Mistral Integration Failed: ${error.message}`);
         }
     }
 
@@ -259,19 +263,19 @@ export class AIEngine {
                     response = await this.runLangdock(prompt, contextStr, CONFIG.LANGDOCK_ASSISTANT_ID, true);
                 } catch (e: any) {
                     console.error("Vibe Engine (Claude) Failed:", e.message);
-                    console.warn("Attempting Failover to HeftCoder Plus (Watermelon)...");
+                    console.warn("Attempting Failover to HeftCoder Plus (Mistral)...");
                     try {
-                        response = await this.runWatermelon(prompt, contextStr, CONFIG.WATERMELON_PLUS_ID);
+                        response = await this.runMistral(prompt, contextStr);
                         response.failover = true;
                     } catch (failoverError: any) {
-                        console.error("Failover Engine (Watermelon) also failed:", failoverError.message);
+                        console.error("Failover Engine (Mistral) also failed:", failoverError.message);
                         throw new Error(`Both PRO and PLUS engines failed. Last error: ${failoverError.message}`);
                     }
                 }
                 break;
 
             case "heftcoder-plus":
-                response = await this.runWatermelon(prompt, contextStr, CONFIG.WATERMELON_PLUS_ID);
+                response = await this.runMistral(prompt, contextStr);
                 break;
 
             case "debugger-pro":
