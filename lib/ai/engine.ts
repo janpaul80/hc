@@ -176,11 +176,22 @@ export class AIEngine {
         console.log(`[Langdock] Calling Agent: ${id} with Key: ${maskedKey}`);
 
         try {
+            const strictSystemPrompt = `You are a code generation API. You MUST respond with ONLY valid JSON. 
+NO prose. NO explanations. NO markdown. NO "I've updated..." messages.
+
+Your output format MUST be:
+{"filename.ext": "file content here", "another/file.ext": "content"}
+
+Where each key is a file path and each value is the file's complete content.
+If you cannot generate code, respond with: {"error": "reason"}
+
+CRITICAL: Your entire response must be parseable by JSON.parse() with zero modifications.`;
+
             const payload = {
                 agent: id,
                 messages: [
-                    { role: "system", content: systemInstruction || "You are HeftCoder Pro, the most advanced AI orchestrator. ENFORCE NO-PROSE: Return ONLY valid JSON representing file changes. No explanations." },
-                    { role: "user", content: `Context: ${context} \n\n Task: ${prompt}` }
+                    { role: "system", content: systemInstruction || strictSystemPrompt },
+                    { role: "user", content: `Generate code files for: ${prompt}\n\nExisting context:\n${context}` }
                 ]
             };
 
@@ -236,11 +247,23 @@ export class AIEngine {
                 body: JSON.stringify({
                     model: model,
                     messages: [
-                        { role: "system", content: "You are HeftCoder Plus (Mistral). Return ONLY valid JSON representing file changes." },
-                        { role: "user", content: `Context: ${context} \n\n Task: ${prompt}` }
+                        {
+                            role: "system",
+                            content: `You are a code generation API. You MUST respond with ONLY valid JSON. 
+NO prose. NO explanations. NO markdown. NO "I've updated..." messages.
+
+Your output format MUST be:
+{"filename.ext": "file content here", "another/file.ext": "content"}
+
+Where each key is a file path and each value is the file's complete content.
+If you cannot generate code, respond with: {"error": "reason"}
+
+CRITICAL: Your entire response must be parseable by JSON.parse() with zero modifications.`
+                        },
+                        { role: "user", content: `Generate code files for: ${prompt}\n\nExisting context:\n${context}` }
                     ],
-                    temperature: 0.7,
-                    max_tokens: 2048
+                    temperature: 0.3,
+                    max_tokens: 4096
                 })
             });
 

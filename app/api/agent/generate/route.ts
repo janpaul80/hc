@@ -13,6 +13,15 @@ export async function POST(req: Request) {
     const body = await req.json();
     const { projectId, prompt, model, fileContext } = body;
 
+    console.log("[AIEngine] Incoming request", {
+        model,
+        projectId,
+        origin: req.headers.get("origin"),
+        referer: req.headers.get("referer"),
+        ip: req.headers.get("x-forwarded-for"),
+        userAgent: req.headers.get("user-agent")
+    });
+
     // 2. Get User from Supabase and Check Credits
     const { data: userData, error: userError } = await supabase
         .from("users")
