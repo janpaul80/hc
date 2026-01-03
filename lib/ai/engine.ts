@@ -167,6 +167,7 @@ export class AIEngine {
         const key = CONFIG.LANGDOCK_API_KEY;
 
         if (!id || id === "HeftCoder Pro" || !key) {
+            console.error(`[CRITICAL] Langdock Config Missing at Runtime! assistantId: ${id}, hasKey: ${!!key}`);
             throw new Error(`Langdock Configuration Missing: Ensure 'LANGDOCK_ASSISTANT_ID' and 'LANGDOCK_API_KEY' are correctly set in Coolify env.`);
         }
 
@@ -226,23 +227,32 @@ export class AIEngine {
         console.log(`[Mistral] Calling Agent/Model: ${id}`);
 
         try {
-            // STEP 3 - Mistral Call (Explicit agent_id or model)
+            // Determine if we are using an Agent or a Model
+            const isAgent = id?.startsWith("ag_");
+            const payload: any = {
+                messages: [
+                    { role: "system", content: "You are HeftCoder Plus (Mistral). Return ONLY valid JSON representing file changes." },
+                    { role: "user", content: `Context: ${context} \n\n Task: ${prompt}` }
+                ],
+                temperature: 0.7,
+                max_tokens: 2048
+            };
+
+            if (isAgent) {
+                payload.agent_id = id;
+            } else {
+                payload.model = id || "mistral-medium-latest";
+            }
+
+            console.log(`[Mistral] Sending Payload with ${isAgent ? "agent_id" : "model"}: ${isAgent ? payload.agent_id : payload.model}`);
+
             const response = await fetch("https://api.mistral.ai/v1/chat/completions", {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",
                     "Authorization": `Bearer ${key}`
                 },
-                body: JSON.stringify({
-                    agent_id: id || "mistral-medium-latest",
-                    model: id ? undefined : "mistral-medium-latest",
-                    messages: [
-                        { role: "system", content: "You are HeftCoder Plus (Mistral). Return ONLY valid JSON representing file changes." },
-                        { role: "user", content: `Context: ${context} \n\n Task: ${prompt}` }
-                    ],
-                    temperature: 0.7,
-                    max_tokens: 2048
-                })
+                body: JSON.stringify(payload)
             });
 
             if (!response.ok) {
