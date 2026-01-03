@@ -16,6 +16,13 @@ const CONFIG = {
     MISTRAL_AGENT_ID: process.env.MISTRAL_AGENT_ID || "ag_019b7df2cec2719aa68ad67ae2bd6927"
 };
 
+// --- RUNTIME BOOT LOGGING ---
+console.log("[AIEngine] Runtime Config Validation (Static Check):");
+console.log(`[AIEngine] LANGDOCK_API_KEY: ${process.env.LANGDOCK_API_KEY ? "PRESENT (READY)" : "MISSING (ACTION REQUIRED)"}`);
+console.log(`[AIEngine] LANGDOCK_ASSISTANT_ID: ${process.env.LANGDOCK_ASSISTANT_ID ? "PRESENT (READY)" : "MISSING (ACTION REQUIRED)"}`);
+console.log(`[AIEngine] MISTRAL_API_KEY: ${process.env.MISTRAL_API_KEY || process.env.MISTRAL_MEDIUM_API_KEY ? "PRESENT (READY)" : "MISSING (ACTION REQUIRED)"}`);
+console.log(`[AIEngine] MISTRAL_AGENT_ID: ${process.env.MISTRAL_AGENT_ID ? "PRESENT (CUSTOM)" : "NOT SET (USING DEFAULT: mistral-medium-latest)"}`);
+
 export type ModelID =
     | "heftcoder-pro"
     | "heftcoder-plus"
@@ -227,7 +234,8 @@ export class AIEngine {
                     "Authorization": `Bearer ${key}`
                 },
                 body: JSON.stringify({
-                    agent_id: id,
+                    agent_id: id || "mistral-medium-latest",
+                    model: id ? undefined : "mistral-medium-latest",
                     messages: [
                         { role: "system", content: "You are HeftCoder Plus (Mistral). Return ONLY valid JSON representing file changes." },
                         { role: "user", content: `Context: ${context} \n\n Task: ${prompt}` }
