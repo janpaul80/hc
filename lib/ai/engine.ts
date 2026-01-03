@@ -215,38 +215,16 @@ export class AIEngine {
         }
     }
 
-    private static async runMistral(prompt: string, context: string, agentId?: string): Promise<AIResponse> {
-        let id = agentId || CONFIG.MISTRAL_AGENT_ID;
+    private static async runMistral(prompt: string, context: string, modelOverride?: string): Promise<AIResponse> {
+        // ALWAYS use model-based chat completions (not agents API)
+        const model = modelOverride || "mistral-medium-latest";
         const key = CONFIG.MISTRAL_API_KEY;
-
-        // Handle placeholder or 'None' values from environment
-        const isPlaceholder = !id || id === "None" || id.includes("Locked Secret");
-        if (isPlaceholder) {
-            console.log(`[Mistral] Warning: Agent ID is '${id}', falling back to model 'mistral-medium-latest'`);
-            id = "mistral-medium-latest";
-        }
 
         if (!key) {
             throw new Error(`Mistral API Key Missing: Ensure 'MISTRAL_API_KEY' is set in Coolify env.`);
         }
 
-        const isAgent = id?.startsWith("ag_");
-        const payload: any = {
-            messages: [
-                { role: "system", content: "You are HeftCoder Plus (Mistral). Return ONLY valid JSON representing file changes." },
-                { role: "user", content: `Context: ${context} \n\n Task: ${prompt}` }
-            ],
-            temperature: 0.7,
-            max_tokens: 2048
-        };
-
-        if (isAgent) {
-            payload.agent_id = id;
-        } else {
-            payload.model = id || "mistral-medium-latest";
-        }
-
-        console.log(`[Mistral] Calling with ${isAgent ? "agent_id" : "model"}: ${isAgent ? payload.agent_id : payload.model}`);
+        console.log(`[Mistral] Calling with model: ${model}`);
 
         try {
             const response = await fetch("https://api.mistral.ai/v1/chat/completions", {
@@ -255,12 +233,20 @@ export class AIEngine {
                     "Content-Type": "application/json",
                     "Authorization": `Bearer ${key}`
                 },
-                body: JSON.stringify(payload)
+                body: JSON.stringify({
+                    model: model,
+                    messages: [
+                        { role: "system", content: "You are HeftCoder Plus (Mistral). Return ONLY valid JSON representing file changes." },
+                        { role: "user", content: `Context: ${context} \n\n Task: ${prompt}` }
+                    ],
+                    temperature: 0.7,
+                    max_tokens: 2048
+                })
             });
 
             if (!response.ok) {
                 const errText = await response.text();
-                console.error(`Mistral API Error [Payload: ${JSON.stringify(payload)}]: Status ${response.status}`, errText);
+                console.error(`Mistral API Error: Status ${response.status}`, errText);
                 throw new Error(`Mistral API Error (${response.status}): ${errText}`);
             }
 
