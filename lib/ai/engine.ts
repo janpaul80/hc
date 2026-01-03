@@ -32,6 +32,8 @@ interface AIResponse {
     content: string;
     usage?: { inputTokenCount: number; outputTokenCount: number };
     failover?: boolean;
+    provider: "langdock" | "mistral" | "openai" | "azure";
+    agent: string;
 }
 
 export class AIEngine {
@@ -64,6 +66,8 @@ export class AIEngine {
                 inputTokenCount: response.usage.prompt_tokens,
                 outputTokenCount: response.usage.completion_tokens
             } : undefined,
+            provider: "azure",
+            agent: "gpt-5.chat"
         };
     }
 
@@ -103,6 +107,8 @@ export class AIEngine {
                     inputTokenCount: response.usage.prompt_tokens,
                     outputTokenCount: response.usage.completion_tokens
                 } : undefined,
+                provider: "azure",
+                agent: modelId
             };
         } catch (error: any) {
             const errorMessage = error?.response?.body
@@ -128,7 +134,11 @@ export class AIEngine {
                 throw new Error("Azure returned no image data");
             }
 
-            return { content: JSON.stringify({ url: response.data[0].url }) };
+            return {
+                content: JSON.stringify({ url: response.data[0].url }),
+                provider: "azure",
+                agent: "flux"
+            };
         } catch (error: any) {
             throw new Error(`Flux Gen Failed [${deploymentName}]: ${error.message}`);
         }
@@ -138,7 +148,11 @@ export class AIEngine {
         const deploymentName = process.env.AZURE_DEPLOYMENT_SORA || "sora";
         // Sora on AOAI typically uses a specific preview SDK or endpoint, 
         // but for now we follow the same deployment pattern.
-        return { content: JSON.stringify({ url: "#", message: `Sora video generation (Mock: using deployment ${deploymentName})` }) };
+        return {
+            content: JSON.stringify({ url: "#", message: `Sora video generation (Mock: using deployment ${deploymentName})` }),
+            provider: "azure",
+            agent: "sora"
+        };
     }
 
     private static async runLangdock(prompt: string, context: string, assistantId?: string, systemInstruction?: string): Promise<AIResponse> {
@@ -177,12 +191,12 @@ export class AIEngine {
 
             const data = await response.json();
             let content = data.choices[0].message.content || "{}";
-            
+
             // Handle reasoning tags if they appear in content (though Langdock agents usually clean this)
             content = content.replace(/<thinking>[\s\S]*?<\/thinking>/g, "").trim();
 
-            return { 
-                content, 
+            return {
+                content,
                 usage: data.usage,
                 provider: "langdock",
                 agent: "heftcoder-pro"
