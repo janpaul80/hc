@@ -214,18 +214,18 @@ Your output format MUST be:
 
             const data = await response.json();
             console.log("[Langdock] FULL DEBUG RESPONSE:", JSON.stringify(data, null, 2));
-            
+
             // Langdock Agent API returns: { "result": [{ "role": "assistant", "content": "..." }] }
-            let content = 
+            let content =
                 data?.result?.[0]?.content ||           // Langdock Agent API format
                 data?.choices?.[0]?.message?.content || // OpenAI format
                 data?.message?.content ||               // Simple message format
                 data?.content ||                        // Direct content
                 data?.output ||                         // Output field
                 JSON.stringify(data);                   // Last resort fallback
-            
+
             console.log("[Langdock] Extracted content:", content);
-            
+
             content = content.replace(/<thinking>[\s\S]*?<\/thinking>/g, "").trim();
 
             return {
@@ -341,9 +341,29 @@ The output MUST be a single JSON object where keys are file paths and values are
                 return JSON.parse(repaired);
             } catch (e) {
                 console.error("[Parser Error] Aggressive cleanup failed. Total length:", str.length);
-                throw new Error("AI returned invalid JSON structure. Check logs for raw output.");
             }
         }
+
+    /**
+     * Unwrap nested content structure from Mistral
+     * Converts: { "file.ts": { "content": "code" } }
+     * To: { "file.ts": "code" }
+     */
+    private static unwrapContent(obj: any): any {
+        if (typeof obj !== 'object' || obj === null) {
+            return obj;
+        }
+
+        const unwrapped: any = {};
+        for (const [key, value] of Object.entries(obj)) {
+            if (typeof value === 'object' && value !== null && 'content' in value) {
+                // Unwrap nested content
+                unwrapped[key] = (value as any).content;
+            } else {
+                unwrapped[key] = value;
+            }
+        }
+        return unwrapped;
     }
 
     public static async generate(model: ModelID, prompt: string, fileContext: any): Promise<AIResponse> {
@@ -397,7 +417,9 @@ The output MUST be a single JSON object where keys are file paths and values are
         // STEP 4 - Normalize the Response (Content Cleanup)
         if (model !== "flux.2-pro" && model !== "sora") {
             try {
-                const parsed = this.parseSafeJSON(response.content);
+                let parsed = this.parseSafeJSON(response.content);
+                // Unwrap nested content structure (e.g., from Mistral)
+                parsed = this.unwrapContent(parsed);
                 response.content = JSON.stringify(parsed);
             } catch (e: any) {
                 throw new Error(`Output Validation Failed: ${e.message}`);
