@@ -213,20 +213,17 @@ Your output format MUST be:
             }
 
             const data = await response.json();
-            console.log("[Langdock] Raw response structure:", JSON.stringify(data, null, 2));
+            console.log("[Langdock] FULL DEBUG RESPONSE:", JSON.stringify(data, null, 2));
             
-            // Handle different possible response formats
-            let content = "{}";
-            if (data.choices && data.choices[0] && data.choices[0].message) {
-                content = data.choices[0].message.content || "{}";
-            } else if (data.message) {
-                content = data.message;
-            } else if (data.content) {
-                content = data.content;
-            } else {
-                console.error("[Langdock] Unexpected response format:", data);
-                throw new Error("Langdock returned unexpected response format");
-            }
+            // Try to find content in common Langdock fields
+            let content = 
+                data?.choices?.[0]?.message?.content || 
+                data?.message?.content || 
+                data?.content || 
+                data?.output || 
+                JSON.stringify(data); // Fallback to stringifying the whole object
+            
+            console.log("[Langdock] Extracted content:", content);
             
             content = content.replace(/<thinking>[\s\S]*?<\/thinking>/g, "").trim();
 
