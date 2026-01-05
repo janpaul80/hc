@@ -344,6 +344,22 @@ The output MUST be a single JSON object where keys are file paths and values are
                 // Extra cleaning for thinking blocks
                 repaired = repaired.replace(/<thinking>[\s\S]*?<\/thinking>/g, "").trim();
 
+                // AGGRESSIVE REPAIR: Fix control characters in string values
+                // This handles literal newlines, tabs, and other control chars
+                repaired = repaired.replace(
+                    /"([^"\\]|\\.)*"/g,
+                    (match) => {
+                        // Only process if it contains control characters
+                        if (/[\x00-\x1F]/.test(match)) {
+                            return match
+                                .replace(/\n/g, '\\n')
+                                .replace(/\r/g, '\\r')
+                                .replace(/\t/g, '\\t');
+                        }
+                        return match;
+                    }
+                );
+
                 return JSON.parse(repaired);
             } catch (e: any) {
                 console.error("[Parser Error] Aggressive cleanup failed. Total length:", str.length);
