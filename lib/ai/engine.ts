@@ -341,8 +341,10 @@ The output MUST be a single JSON object where keys are file paths and values are
                 return JSON.parse(repaired);
             } catch (e) {
                 console.error("[Parser Error] Aggressive cleanup failed. Total length:", str.length);
+                throw new Error("AI returned invalid JSON structure. Check logs for raw output.");
             }
         }
+    }
 
     /**
      * Unwrap nested content structure from Mistral
