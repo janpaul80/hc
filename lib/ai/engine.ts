@@ -18,7 +18,7 @@ const CONFIG = {
 
 // --- RUNTIME BOOT LOGGING ---
 console.log("[AIEngine] Runtime Config Validation (Static Check):");
-console.log(`[AIEngine] LANGDOCK_API_KEY: ${process.env.LANGDOCK_API_KEY ? "PRESENT (READY)" : "MISSING (ACTION REQUIRED)"}`);
+console.log(`[AIEngine] LANGDOCK_API_KEY: ${process.env.LANGDOCK_API_KEY ? `PRESENT (Sfx: ...${process.env.LANGDOCK_API_KEY.slice(-7)})` : "MISSING"}`);
 console.log(`[AIEngine] LANGDOCK_ASSISTANT_ID: ${process.env.LANGDOCK_ASSISTANT_ID ? "PRESENT (READY)" : "MISSING (ACTION REQUIRED)"}`);
 console.log(`[AIEngine] MISTRAL_API_KEY: ${process.env.MISTRAL_API_KEY || process.env.MISTRAL_MEDIUM_API_KEY ? "PRESENT (READY)" : "MISSING (ACTION REQUIRED)"}`);
 console.log(`[AIEngine] MISTRAL_AGENT_ID: ${process.env.MISTRAL_AGENT_ID ? "PRESENT (CUSTOM)" : "NOT SET (USING DEFAULT: mistral-medium-latest)"}`);
@@ -176,16 +176,19 @@ export class AIEngine {
         console.log(`[Langdock] Calling Agent: ${id} with Key: ${maskedKey}`);
 
         try {
-            const strictSystemPrompt = `You are a code generation API. You MUST respond with ONLY valid JSON. 
-NO prose. NO explanations. NO markdown. NO "I've updated..." messages.
+            const strictSystemPrompt = `You are HeftCoder PRO. Your soul mission is to generate code.
+You MUST respond with VALID JSON ONLY.
+No markdown.
+No explanations.
+No backticks.
+If unsure, return {}.
+The first character of your response must be '{' and the last character must be '}'.
 
 Your output format MUST be:
-{"filename.ext": "file content here", "another/file.ext": "content"}
-
-Where each key is a file path and each value is the file's complete content.
-If you cannot generate code, respond with: {"error": "reason"}
-
-CRITICAL: Your entire response must be parseable by JSON.parse() with zero modifications.`;
+{
+  "path/to/file.ext": "complete file content",
+  "another/file.tsx": "content"
+}`;
 
             const payload = {
                 agent: id,
@@ -230,74 +233,105 @@ CRITICAL: Your entire response must be parseable by JSON.parse() with zero modif
         // ALWAYS use model-based chat completions (not agents API)
         const model = modelOverride || "mistral-medium-latest";
         const key = CONFIG.MISTRAL_API_KEY;
-
         if (!key) {
             throw new Error(`Mistral API Key Missing: Ensure 'MISTRAL_API_KEY' is set in Coolify env.`);
         }
 
-        console.log(`[Mistral] Calling with model: ${model}`);
+        let attempts = 0;
+        const maxAttempts = 2;
+        let lastError: any = null;
+        let mistralUsage: AIResponse['usage'] | undefined;
 
-        try {
-            const response = await fetch("https://api.mistral.ai/v1/chat/completions", {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                    "Authorization": `Bearer ${key}`
-                },
-                body: JSON.stringify({
-                    model: model,
-                    messages: [
-                        {
-                            role: "system",
-                            content: `You are a code generation API. You MUST respond with ONLY valid JSON. 
-NO prose. NO explanations. NO markdown. NO "I've updated..." messages.
+        while (attempts < maxAttempts) {
+            attempts++;
+            try {
+                console.log(`[Mistral] Call attempt ${attempts}/${maxAttempts}`);
+                const response = await fetch("https://api.mistral.ai/v1/chat/completions", {
+                    method: "POST",
+                    headers: {
+                        Authorization: `Bearer ${key}`,
+                        "Content-Type": "application/json",
+                    },
+                    body: JSON.stringify({
+                        model: "mistral-medium-latest",
+                        messages: [
+                            {
+                                role: "system",
+                                content: `You are HeftCoder PLUS.
+You MUST respond with VALID JSON ONLY.
+No markdown.
+No explanations.
+No backticks.
+If unsure, return {}.
+The output MUST be a single JSON object where keys are file paths and values are file contents.`
+                            },
+                            { role: "user", content: `Generate code files for: ${prompt}\n\nExisting context:\n${context}` }
+                        ],
+                        temperature: 0.2, // Lower temperature for more consistent JSON
+                        max_tokens: 4096
+                    }),
+                });
 
-Your output format MUST be:
-{"filename.ext": "file content here", "another/file.ext": "content"}
+                if (!response.ok) {
+                    const err = await response.text();
+                    throw new Error(`Mistral API error: ${err}`);
+                }
 
-Where each key is a file path and each value is the file's complete content.
-If you cannot generate code, respond with: {"error": "reason"}
-
-CRITICAL: Your entire response must be parseable by JSON.parse() with zero modifications.`
-                        },
-                        { role: "user", content: `Generate code files for: ${prompt}\n\nExisting context:\n${context}` }
-                    ],
-                    temperature: 0.3,
-                    max_tokens: 4096
-                })
-            });
-
-            if (!response.ok) {
-                const errText = await response.text();
-                console.error(`Mistral API Error: Status ${response.status}`, errText);
-                throw new Error(`Mistral API Error (${response.status}): ${errText}`);
-            }
-
-            const data = await response.json();
-            return {
-                content: data.choices[0].message.content || "{}",
-                usage: data.usage ? {
+                const data = await response.json();
+                const raw = data.choices?.[0]?.message?.content ?? "";
+                mistralUsage = data.usage ? {
                     inputTokenCount: data.usage.prompt_tokens,
                     outputTokenCount: data.usage.completion_tokens
-                } : undefined,
-                provider: "mistral",
-                agent: "heftcoder-plus"
-            };
-        } catch (error: any) {
-            console.error("Mistral Connectivity Error:", error.message);
-            throw new Error(`Mistral Integration Failed: ${error.message}`);
+                } : undefined;
+
+                try {
+                    const parsedContent = this.parseSafeJSON(raw);
+                    return {
+                        content: JSON.stringify(parsedContent),
+                        usage: mistralUsage,
+                        provider: "mistral",
+                        agent: "heftcoder-plus"
+                    };
+                } catch (err) {
+                    console.warn(`[Mistral] Parse failed on attempt ${attempts}. Raw output snippet: ${raw.substring(0, 100)}...`);
+                    lastError = err;
+                    if (attempts >= maxAttempts) {
+                        // Final fallback — do NOT 500, return raw content if parsing consistently fails
+                        return {
+                            content: raw, // Return raw string if parsing fails after retries
+                            usage: mistralUsage,
+                            provider: "mistral",
+                            agent: "heftcoder-plus"
+                        };
+                    }
+                }
+            } catch (err) {
+                console.error(`[Mistral] Network/API Error on attempt ${attempts}:`, err);
+                lastError = err;
+                if (attempts >= maxAttempts) throw err;
+            }
         }
+        throw lastError; // Should not be reached if maxAttempts > 0
     }
 
     private static parseSafeJSON(str: string): any {
         try {
-            // Remove markdown formatting if present
-            let clean = str.replace(/```json/g, "").replace(/```/g, "").trim();
-            clean = clean.replace(/<thinking>[\s\S]*?<\/thinking>/g, "").trim();
-            return JSON.parse(clean);
-        } catch (e) {
-            console.error("Failed to parse AI JSON:", str);
-            throw new Error("AI returned invalid JSON structure");
+            return JSON.parse(str);
+        } catch {
+            // Attempt repair
+            try {
+                let repaired = str.trim()
+                    .replace(/```json|```/g, "")
+                    .replace(/^[^{]*({[\s\S]*})[^}]*$/, "$1");
+
+                // Extra cleaning for thinking blocks
+                repaired = repaired.replace(/<thinking>[\s\S]*?<\/thinking>/g, "").trim();
+
+                return JSON.parse(repaired);
+            } catch (e) {
+                console.error("[Parser Error] Aggressive cleanup failed. Total length:", str.length);
+                throw new Error("AI returned invalid JSON structure. Check logs for raw output.");
+            }
         }
     }
 
