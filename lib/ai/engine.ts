@@ -191,14 +191,14 @@ Your output format MUST be:
 }`;
 
             const payload = {
-                agent: id,
+                assistantId: id,
                 messages: [
                     { role: "system", content: systemInstruction || strictSystemPrompt },
                     { role: "user", content: `Generate code files for: ${prompt}\n\nExisting context:\n${context}` }
                 ]
             };
 
-            const response = await fetch("https://api.langdock.com/v1/chat/completions", {
+            const response = await fetch("https://api.langdock.com/assistant/v1/chat/completions", {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",
