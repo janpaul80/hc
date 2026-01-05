@@ -2,6 +2,7 @@ import { createServiceClient } from "@/lib/supabase";
 import { NextResponse } from "next/server";
 import { AIEngine, ModelID } from "@/lib/ai/engine";
 import { auth } from "@clerk/nextjs/server";
+import { ActionParser } from "@/lib/agent/parser";
 
 export async function POST(req: Request) {
     const { userId: clerkId } = await auth();
@@ -46,15 +47,27 @@ export async function POST(req: Request) {
 
         let content;
         let imageUrl;
+        let agentResponse;
 
         if (isImage) {
             const parsed = JSON.parse(result.content);
             imageUrl = parsed.url;
             const fileName = `public/assets/gen-${Date.now()}.png`;
             content = { [fileName]: `IMAGE_ASSET:${imageUrl}` };
+
+            // For images, no actions needed
+            agentResponse = {
+                conversationText: "Generated image",
+                actions: [],
+                requiresConfirmation: false
+            };
         } else {
             try {
                 content = JSON.parse(result.content);
+
+                // NEW: Parse into structured actions
+                agentResponse = ActionParser.parseResponse(content);
+
             } catch (e) {
                 return NextResponse.json({ error: "AI returned invalid JSON" }, { status: 500 });
             }
@@ -96,7 +109,9 @@ export async function POST(req: Request) {
             success: true,
             changes: content,
             imageUrl,
-            failover: result.failover
+            failover: result.failover,
+            // NEW: Include agent response with actions
+            agentResponse
         });
 
     } catch (error: any) {
