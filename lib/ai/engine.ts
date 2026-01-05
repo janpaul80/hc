@@ -192,9 +192,7 @@ Your output format MUST be:
 
             const payload = {
                 assistantId: id,
-                messages: [
-                    { role: "system", content: systemInstruction || strictSystemPrompt },
-                    { role: "user", content: `Generate code files for: ${prompt}\n\nExisting context:\n${context}` }
+                messages: [\r\n                    { role: "user", content: `Generate code files for: ${prompt}\n\nExisting context:\n${context}` }
                 ]
             };
 
