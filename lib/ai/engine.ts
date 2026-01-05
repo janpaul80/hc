@@ -290,13 +290,18 @@ The output MUST be a single JSON object where keys are file paths and values are
 
                 const data = await response.json();
                 const raw = data.choices?.[0]?.message?.content ?? "";
+                console.log("[Mistral] Full raw response length:", raw.length);
+                console.log("[Mistral] First 500 chars:", raw.substring(0, 500));
+
                 mistralUsage = data.usage ? {
                     inputTokenCount: data.usage.prompt_tokens,
                     outputTokenCount: data.usage.completion_tokens
                 } : undefined;
 
                 try {
-                    const parsedContent = this.parseSafeJSON(raw);
+                    let parsedContent = this.parseSafeJSON(raw);
+                    // Unwrap nested content structure from Mistral
+                    parsedContent = this.unwrapContent(parsedContent);
                     return {
                         content: JSON.stringify(parsedContent),
                         usage: mistralUsage,
