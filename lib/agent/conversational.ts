@@ -124,8 +124,12 @@ RESPONSE FORMAT (Strict Markdown):
 1. [Step 1]
 2. [Step 2]
 
+[THINKING]
+I have outlined the plan above. I am waiting for user approval.
+[/THINKING]
+
 **Status**: 🟡 WAITING FOR APPROVAL
-[Ask the user to confirm to proceed to Coding]
+[WAIT]
 
 ${context ? `Previous context: ${context}` : ''}`;
         }

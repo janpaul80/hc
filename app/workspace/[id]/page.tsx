@@ -6,7 +6,7 @@ import { ModelSelector } from "./components/ModelSelector";
 import { ActionList } from "@/components/workspace/ActionBlock";
 import { PreviewPanel } from "@/components/workspace/PreviewPanel";
 import { ThinkingIndicator } from "@/components/workspace/ThinkingIndicator";
-import { StageProgress, PlanArtifact, TerminalArtifact } from "@/components/workspace/ChatArtifacts";
+import { StageProgress, ArtifactMessage } from "@/components/workspace/ChatArtifacts";
 import { ConversationalAgent } from "@/lib/agent/conversational";
 import { AgentAction } from "@/lib/agent/actions";
 import { Message } from "@/types/workspace";
@@ -310,18 +310,24 @@ export default function Workspace(props: { params: Promise<{ id: string }> }) {
                                                                 )}
                                                             </div>
 
-                                                            {isPlan && msg.role === 'ai' ? (
+                                                            {msg.role === 'ai' ? (
                                                                 <div className="max-w-[90%] w-full">
-                                                                    <PlanArtifact content={msg.content} />
-                                                                </div>
-                                                            ) : (
-                                                                <div className={`p-3 rounded-xl text-xs max-w-[85%] border shadow-sm ${msg.role === 'ai' ? 'bg-white/5 border-white/10 text-gray-300' : 'bg-orange-600/10 border-orange-600/20 text-orange-100 italic'}`}>
-                                                                    {msg.content}
+                                                                    <ArtifactMessage
+                                                                        content={msg.content}
+                                                                        onApprove={() => {
+                                                                            setChatInput("Approved");
+                                                                            handleSendMessage();
+                                                                        }}
+                                                                    />
                                                                     {msg.imageUrl && (
                                                                         <div className="mt-3 rounded-lg overflow-hidden border border-white/10">
                                                                             <img src={msg.imageUrl} alt="Generated" className="w-full h-auto" />
                                                                         </div>
                                                                     )}
+                                                                </div>
+                                                            ) : (
+                                                                <div className={`p-3 rounded-xl text-xs max-w-[85%] border shadow-sm bg-orange-600/10 border-orange-600/20 text-orange-100 italic`}>
+                                                                    {msg.content}
                                                                 </div>
                                                             )}
                                                         </div>
