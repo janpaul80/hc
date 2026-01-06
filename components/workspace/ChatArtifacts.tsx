@@ -178,7 +178,8 @@ export function ArtifactMessage({ content, onApprove }: { content: string, onApp
 }
 
 // Re-export specific Artifacts for standalone use if needed
-export { PlanArtifact } from './PlanArtifactDummy'; // We are replacing PlanArtifact with ArtifactMessage used generally, but keeping this export if legacy code needs it, though we will refactor page.tsx to use ArtifactMessage for everything.
+// Re-export specific Artifacts for standalone use if needed
+export { PlanArtifactDummy as PlanArtifact }; // Correctly export the locally defined component
 
 /** 
  * Backwards compatibility wrapper if PlanArtifact is still strictly imported
