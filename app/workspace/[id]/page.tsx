@@ -7,11 +7,17 @@ import { SandpackProvider, SandpackLayout, SandpackCodeEditor, SandpackPreview, 
 import { atomDark } from "@codesandbox/sandpack-themes";
 import { supabase } from '@/lib/supabase';
 import Link from 'next/link';
+import { ActionList } from '@/components/workspace/ActionBlock';
+import { AgentAction } from '@/lib/agent/actions';
 
 interface Message {
     role: "user" | "ai";
     content: string;
     imageUrl?: string;
+    actions?: AgentAction[];
+    actionStatuses?: Record<string, 'pending' | 'running' | 'done' | 'error'>;
+    actionOutputs?: Record<string, string>;
+    actionErrors?: Record<string, string>;
 }
 
 export default function Workspace(props: { params: Promise<{ id: string }> }) {
