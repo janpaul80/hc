@@ -42,6 +42,26 @@ export default function Workspace(props: { params: Promise<{ id: string }> }) {
     const fileInputRef = useRef<HTMLInputElement>(null);
     const recognitionRef = useRef<any>(null);
 
+    // Auto-detect entry file if content changes
+    useEffect(() => {
+        if (!project?.files) return;
+
+        // If current active file exists, do nothing
+        if (project.files[activeFile]) return;
+
+        // Otherwise find a new best candidate
+        const candidates = ['/src/App.tsx', '/src/index.tsx', '/src/main.tsx', '/App.tsx', '/index.js'];
+        for (const candidate of candidates) {
+            if (project.files[candidate]) {
+                setActiveFile(candidate);
+                return;
+            }
+        }
+        // Fallback to first file
+        const firstFile = Object.keys(project.files)[0];
+        if (firstFile) setActiveFile(firstFile);
+    }, [project, activeFile]);
+
     useEffect(() => {
         const fetchProject = async () => {
             try {
