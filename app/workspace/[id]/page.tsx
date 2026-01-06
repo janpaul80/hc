@@ -265,8 +265,16 @@ export default function Workspace(props: { params: Promise<{ id: string }> }) {
                                             <div className="flex-1 overflow-y-auto p-4 space-y-4">
                                                 {messages.map((msg, i) => (
                                                     <div key={i} className={`flex gap-3 ${msg.role === 'user' ? 'flex-row-reverse' : ''}`}>
-                                                        <div className={`w-7 h-7 rounded-full flex items-center justify-center text-[9px] uppercase font-bold shrink-0 ${msg.role === 'ai' ? 'bg-orange-600 text-white' : 'bg-white/10 text-gray-400'}`}>
-                                                            {msg.role === 'ai' ? 'AI' : 'Me'}
+                                                        <div className={`w-7 h-7 rounded-full flex items-center justify-center shrink-0 ${msg.role === 'ai' ? 'bg-orange-600 text-white shadow-orange-500/20 shadow-lg' : 'bg-white/10 text-gray-400'}`}>
+                                                            {msg.role === 'ai' ? (
+                                                                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-zap">
+                                                                    <path d="M4 14a1 1 0 0 1-.78-1.63l9.9-10.2a.5.5 0 0 1 .86.46l-1.92 6.02A1 1 0 0 0 13 10h7a1 1 0 0 1 .78 1.63l-9.9 10.2a.5.5 0 0 1-.86-.46l1.92-6.02A1 1 0 0 0 11 14z"></path>
+                                                                </svg>
+                                                            ) : (
+                                                                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-user">
+                                                                    <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2" /><circle cx="12" cy="7" r="4" />
+                                                                </svg>
+                                                            )}
                                                         </div>
                                                         <div className={`p-3 rounded-xl text-xs max-w-[85%] border shadow-sm ${msg.role === 'ai' ? 'bg-white/5 border-white/10 text-gray-300' : 'bg-orange-600/10 border-orange-600/20 text-orange-100 italic'}`}>
                                                             {msg.content}
@@ -280,7 +288,11 @@ export default function Workspace(props: { params: Promise<{ id: string }> }) {
                                                 ))}
                                                 {isGenerating && (
                                                     <div className="flex gap-3">
-                                                        <div className="w-7 h-7 rounded-full bg-orange-600 text-white flex items-center justify-center text-[9px] uppercase font-bold shrink-0">AI</div>
+                                                        <div className="w-7 h-7 rounded-full bg-orange-600 text-white flex items-center justify-center shrink-0 shadow-orange-500/20 shadow-lg animate-pulse">
+                                                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-zap">
+                                                                <path d="M4 14a1 1 0 0 1-.78-1.63l9.9-10.2a.5.5 0 0 1 .86.46l-1.92 6.02A1 1 0 0 0 13 10h7a1 1 0 0 1 .78 1.63l-9.9 10.2a.5.5 0 0 1-.86-.46l1.92-6.02A1 1 0 0 0 11 14z"></path>
+                                                            </svg>
+                                                        </div>
                                                         <ThinkingIndicator visible={true} action={thinkingAction} />
                                                     </div>
                                                 )}

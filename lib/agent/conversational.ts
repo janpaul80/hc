@@ -54,7 +54,31 @@ export class ConversationalAgent {
             return { type: 'discussion', canGenerateCode: false };
         }
 
-        // Explicit build request
+        // Explicit build confirmation triggers - strict
+        const immediateExecutionTriggers = [
+            'execute plan',
+            'run code',
+            'start coding',
+            'build it',
+            'yes build this',
+            'proceed',
+            'approved'
+        ];
+
+        const wantsToExecute = immediateExecutionTriggers.some(trigger => lowerMsg.includes(trigger));
+
+        // If it's a "build me a [complex thing]" request, it should actually be PLANNING first.
+        // We only switch to building if they are confirming a plan or being very terse.
+        if (wantsToExecute) {
+            return { type: 'building', canGenerateCode: true };
+        }
+
+        // Even if they say "build", if it's a long description, it's a plan request.
+        if (wantsToBuild && lowerMsg.length > 50) {
+            return { type: 'planning', canGenerateCode: false };
+        }
+
+        // Fallback for short build commands
         if (wantsToBuild) {
             return { type: 'building', canGenerateCode: true };
         }
