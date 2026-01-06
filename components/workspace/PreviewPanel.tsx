@@ -91,7 +91,7 @@ export function PreviewPanel({ isBuilding, isReady, port, error, buildStatus }: 
             <div className="h-full bg-[#0f0f0f] flex flex-col items-center justify-center p-8">
                 <div className="bg-red-950/20 border border-red-900 rounded-lg p-6 max-w-md">
                     <div className="flex items-center gap-3 mb-4">
-                        <Alert Circle className="w-6 h-6 text-red-500" />
+                        <AlertCircle className="w-6 h-6 text-red-500" />
                         <h3 className="text-white font-medium">Build Failed</h3>
                     </div>
                     <pre className="text-xs text-red-400 font-mono whitespace-pre-wrap">
