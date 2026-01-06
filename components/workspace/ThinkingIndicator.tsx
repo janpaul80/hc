@@ -49,16 +49,59 @@ export function ThinkingIndicator({ visible, action = 'thinking' }: ThinkingIndi
         }
     };
 
+    const getTerminalView = () => {
+        return (
+            <div className="flex flex-col gap-1 w-full min-w-[250px]">
+                <div className="flex items-center gap-2 text-xs text-gray-500 font-mono border-b border-gray-700/50 pb-1 mb-1">
+                    <span className="text-green-500">➜</span>
+                    <span>~/project</span>
+                </div>
+                <div className="font-mono text-xs text-gray-400 space-y-1">
+                    <div className="flex gap-2">
+                        <span className="text-blue-400">info</span>
+                        <span>installing dependencies...</span>
+                    </div>
+                    <div className="flex gap-2 text-gray-500">
+                        <span>warn</span>
+                        <span>react-dom@18.2.0 requires react@^18.2.0</span>
+                    </div>
+                    <div className="flex gap-2 text-green-400">
+                        <span>success</span>
+                        <span>added 142 packages in 1s</span>
+                    </div>
+                    <div className="flex gap-2 animate-pulse">
+                        <span className="text-orange-500">wait</span>
+                        <span>compiling modules...</span>
+                    </div>
+                </div>
+            </div>
+        );
+    };
+
     const getText = () => {
         switch (action) {
             case 'writing':
-                return `Writing${dots}`;
+                return `Writing code${dots}`;
             case 'building':
-                return `Building${dots}`;
+                return `Building environment${dots}`;
             default:
                 return `thinking${dots}`;
         }
     };
+
+    if (action === 'building') {
+        return (
+            <div className="rounded-lg bg-[#1e1e1e] border border-gray-700 p-3 shadow-lg">
+                <div className="flex items-center gap-2 mb-2">
+                    <div className="w-2.5 h-2.5 rounded-full bg-red-500/80" />
+                    <div className="w-2.5 h-2.5 rounded-full bg-yellow-500/80" />
+                    <div className="w-2.5 h-2.5 rounded-full bg-green-500/80" />
+                    <span className="text-xs text-gray-500 ml-2 font-mono">bash — 80x24</span>
+                </div>
+                {getTerminalView()}
+            </div>
+        );
+    }
 
     return (
         <div className="flex items-center gap-2 px-3 py-2 bg-gray-800/50 rounded-lg border border-gray-700/50">
