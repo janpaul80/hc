@@ -154,7 +154,15 @@ export function ArtifactMessage({ content, onApprove }: { content: string, onApp
                                 </div>
                             </div>
                         ) : (
-                            <code className="bg-white/10 text-orange-200 px-1 py-0.5 rounded text-[10px] font-mono" {...props}>
+                            <code
+                                className={`
+                                    px-1.5 py-0.5 rounded text-[10px] font-mono font-medium
+                                    ${String(children).startsWith('npm') ? 'bg-blue-500/20 text-blue-300 border border-blue-500/30' :
+                                        String(children).startsWith('cd') ? 'bg-green-500/20 text-green-300 border border-green-500/30' :
+                                            'bg-white/10 text-orange-200 border border-white/5'}
+                                `}
+                                {...props}
+                            >
                                 {children}
                             </code>
                         );
