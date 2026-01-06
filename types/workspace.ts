@@ -14,3 +14,24 @@ export interface Message {
     actionOutputs?: Record<string, string>;
     actionErrors?: Record<string, string>;
 }
+
+/**
+ * Workspace State Management
+ */
+export interface WorkspaceState {
+    id: string;
+    currentPlan: {
+        summary: string;
+        steps: string[];
+    } | null;
+    planStatus: "none" | "proposed" | "approved";
+}
+
+/**
+ * Agent Event Types for UI
+ */
+export type AgentEvent =
+    | { type: "chat"; content: string }
+    | { type: "file:create"; path: string }
+    | { type: "file:update"; path: string }
+    | { type: "command"; cmd: string; status?: "running" | "success" | "error" };

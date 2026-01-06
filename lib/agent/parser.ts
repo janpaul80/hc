@@ -1,10 +1,11 @@
 /**
  * HashCoder IDE - Action Parser
- * 
+ *
  * Parses AI responses and extracts structured actions
  */
 
 import { AgentAction, WriteFileAction, InstallAction, RunAction } from './actions';
+import { AgentEvent } from '@/types/workspace';
 import { v4 as uuidv4 } from 'uuid';
 
 export class ActionParser {
@@ -78,7 +79,7 @@ export class ActionParser {
     }
 
     /**
-     * Parse AI response into actions
+     * Parse AI response into actions and events
      */
     static parseResponse(filesJson: Record<string, string>) {
         const writeActions = this.parseFileActions(filesJson);
@@ -95,10 +96,49 @@ export class ActionParser {
             actions.push(runAction);
         }
 
+        // Create events for UI display
+        const events: AgentEvent[] = [];
+
+        // Add file creation events
+        writeActions.forEach(action => {
+            events.push({
+                type: "file:create",
+                path: action.path
+            });
+        });
+
+        // Add command events
+        if (installAction) {
+            events.push({
+                type: "command",
+                cmd: `npm install ${installAction.packages.join(' ')}`
+            });
+        }
+
+        if (runAction) {
+            events.push({
+                type: "command",
+                cmd: runAction.command
+            });
+        }
+
         return {
             conversationText: `Generated ${writeActions.length} files`,
             actions,
+            events,
             requiresConfirmation: false
+        };
+    }
+
+    /**
+     * Parse chat response (no actions)
+     */
+    static parseChatResponse(content: string): { events: AgentEvent[] } {
+        return {
+            events: [{
+                type: "chat",
+                content
+            }]
         };
     }
 }

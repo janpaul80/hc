@@ -1,6 +1,6 @@
 "use client";
 import React, { useState, useRef, useEffect, use } from "react";
-import { Play, Share2, UploadCloud, Github, Send, FileCode, ChevronRight, ChevronDown, Loader2, ArrowLeft, Paperclip, AudioLines, Image, FileUp, Figma, Code2, Sparkles } from "lucide-react";
+import { Play, Share2, UploadCloud, Github, Send, FileCode, ChevronRight, ChevronDown, Loader2, ArrowLeft, Paperclip, AudioLines, Image, FileUp, Figma, Code2, Sparkles, CheckCircle, XCircle, Terminal } from "lucide-react";
 import { ResizablePanelGroup, ResizablePanel, ResizableHandle } from "@/components/ui/resizable";
 import { ModelSelector } from "./components/ModelSelector";
 import { ActionList } from "@/components/workspace/ActionBlock";
@@ -9,7 +9,8 @@ import { ThinkingIndicator } from "@/components/workspace/ThinkingIndicator";
 import { StageProgress, ArtifactMessage } from "@/components/workspace/ChatArtifacts";
 import { ConversationalAgent } from "@/lib/agent/conversational";
 import { AgentAction } from "@/lib/agent/actions";
-import { Message } from "@/types/workspace";
+import { Message, WorkspaceState, AgentEvent } from "@/types/workspace";
+import { UserIntent } from "@/lib/agent/intent";
 import {
     SandpackProvider,
     SandpackLayout,
@@ -37,6 +38,13 @@ export default function Workspace(props: { params: Promise<{ id: string }> }) {
     const [agentMode, setAgentMode] = useState<'discussion' | 'planning' | 'building'>('discussion');
     const [thinkingAction, setThinkingAction] = useState<'thinking' | 'writing' | 'building'>('thinking');
     const [currentStage, setCurrentStage] = useState<'planning' | 'approving' | 'coding'>('planning');
+    const [workspaceState, setWorkspaceState] = useState<WorkspaceState>({
+        id: params.id,
+        currentPlan: null,
+        planStatus: "none"
+    });
+    const [currentIntent, setCurrentIntent] = useState<UserIntent | null>(null);
+    const [agentEvents, setAgentEvents] = useState<AgentEvent[]>([]);
 
     const chatEndRef = useRef<HTMLDivElement>(null);
     const fileInputRef = useRef<HTMLInputElement>(null);
@@ -100,6 +108,26 @@ export default function Workspace(props: { params: Promise<{ id: string }> }) {
         setIsGenerating(true);
         setChatInput("");
 
+        // Classify intent and update mode
+        const intent = ConversationalAgent.detectIntent(userPrompt);
+        const mode = ConversationalAgent.intentToMode(intent, workspaceState);
+        setCurrentIntent(intent);
+        setAgentMode(mode.type);
+
+        // Update thinking action based on intent
+        if (intent === UserIntent.GREETING || intent === UserIntent.QUESTION) {
+            setThinkingAction('thinking');
+        } else if (intent === UserIntent.PLAN_REQUEST || intent === UserIntent.EDIT_PLAN) {
+            setThinkingAction('thinking');
+            setCurrentStage('planning');
+        } else if (intent === UserIntent.APPROVAL) {
+            setThinkingAction('writing');
+            setCurrentStage('coding');
+        } else if (intent === UserIntent.CODE_REQUEST) {
+            setThinkingAction('writing');
+            setCurrentStage('coding');
+        }
+
         try {
             const response = await fetch("/api/agent/generate", {
                 method: "POST",
@@ -108,7 +136,8 @@ export default function Workspace(props: { params: Promise<{ id: string }> }) {
                     projectId: params.id,
                     prompt: userPrompt,
                     fileContext: project?.files,
-                    model: selectedModel
+                    model: selectedModel,
+                    workspaceState
                 })
             });
 
@@ -126,48 +155,80 @@ export default function Workspace(props: { params: Promise<{ id: string }> }) {
                 }]);
             }
 
-            // 🔍 CHECK FOR CONVERSATION / PLAN
-            // Sometimes the engine returns a special object for text-only responses
-            let rawContent;
-            try {
-                rawContent = JSON.parse(data.content);
-            } catch (e) {
-                // If it's already an object or string
-                rawContent = data.content;
-            }
-
-            if (rawContent && rawContent.__isConversation) {
-                // IT IS A PLAN/CHAT MESSAGE
-
-                // Update stage based on content
-                if (rawContent.message.includes("## Stage")) {
-                    setCurrentStage('approving');
-                }
-
+            // Handle based on intent and response
+            if (data.intent && !data.shouldModifyFiles) {
+                // Chat-only response
                 setMessages(prev => [...prev, {
                     role: "ai",
-                    content: rawContent.message
+                    content: data.response.content
                 }]);
+
+                // Update workspace state for planning
+                if (data.intent === UserIntent.PLAN_REQUEST) {
+                    setWorkspaceState(prev => ({
+                        ...prev,
+                        planStatus: "proposed",
+                        currentPlan: {
+                            summary: data.response.content,
+                            steps: [] // Would parse from content
+                        }
+                    }));
+                    setCurrentStage('approving');
+                }
             } else if (data.imageUrl) {
-                // IT IS AN IMAGE
+                // Image response
                 setMessages(prev => [...prev, {
                     role: "ai",
                     content: "I've generated this image for you:",
                     imageUrl: data.imageUrl
                 }]);
-            } else {
-                // IT IS CODE
-                setCurrentStage('coding'); // Move to Coding Stage
-                setMessages(prev => [...prev, { role: "ai", content: "I've updated the code for you!" }]);
+            } else if (data.shouldModifyFiles) {
+                // Code generation - show activities
+                setAgentEvents(data.agentResponse?.events || []);
+
+                // Show coding activities in chat
+                const activityMessages = (data.agentResponse?.events || []).map((event: AgentEvent) => {
+                    switch (event.type) {
+                        case "file:create":
+                            return `📄 Creating file: ${event.path}`;
+                        case "file:update":
+                            return `📝 Updating file: ${event.path}`;
+                        case "command":
+                            return `⚡ Running: ${event.cmd}`;
+                        default:
+                            return "";
+                    }
+                }).filter(msg => msg);
+
+                // Add activity messages
+                activityMessages.forEach(msg => {
+                    setMessages(prev => [...prev, { role: "ai", content: msg }]);
+                });
+
+                // Add final success message
+                setMessages(prev => [...prev, {
+                    role: "ai",
+                    content: "✅ Code generation complete!"
+                }]);
+
+                // Update workspace state
+                if (data.intent === UserIntent.APPROVAL) {
+                    setWorkspaceState(prev => ({
+                        ...prev,
+                        planStatus: "approved"
+                    }));
+                }
             }
 
             // Refetch project to show updates
-            const { data: updatedProject } = await supabase
-                .from('projects')
-                .select('*')
-                .eq('id', params.id)
-                .single();
-            if (updatedProject) setProject(updatedProject);
+            if (data.shouldModifyFiles) {
+                const { data: updatedProject } = await supabase
+                    .from('projects')
+                    .select('*')
+                    .eq('id', params.id)
+                    .single();
+                if (updatedProject) setProject(updatedProject);
+            }
 
         } catch (error: any) {
             console.error("Generation error:", error);

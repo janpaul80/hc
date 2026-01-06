@@ -1,8 +1,11 @@
 /**
  * HashCoder IDE - Conversational Agent System
- * 
+ *
  * Makes the agent chat and plan before coding, like Claude/Cursor
  */
+
+import { UserIntent, IntentClassifier } from './intent';
+import { WorkspaceState } from '@/types/workspace';
 
 export interface AgentMode {
     type: 'discussion' | 'planning' | 'building';
@@ -11,90 +14,46 @@ export interface AgentMode {
 
 export class ConversationalAgent {
     /**
-     * Detect if user wants to chat vs build
+     * Detect user intent using the new classifier
      */
-    static detectIntent(userMessage: string): AgentMode {
-        const lowerMsg = userMessage.toLowerCase().trim();
+    static detectIntent(userMessage: string): UserIntent {
+        return IntentClassifier.classify(userMessage);
+    }
 
-        // Keywords that indicate user wants to BUILD NOW
-        const buildTriggers = [
-            'build this',
-            'create this',
-            'make this',
-            'code this',
-            'generate',
-            'let\'s build',
-            'start building',
-            'implement',
-            'write the code'
-        ];
+    /**
+     * Convert intent to agent mode
+     */
+    static intentToMode(intent: UserIntent, workspaceState: WorkspaceState): AgentMode {
+        switch (intent) {
+            case UserIntent.GREETING:
+                return { type: 'discussion', canGenerateCode: false };
 
-        // Keywords that indicate PLANNING/DISCUSSION
-        const discussionTriggers = [
-            'how would',
-            'what do you think',
-            'can you help',
-            'i want to',
-            'i need',
-            'planning',
-            'idea',
-            'suggest',
-            'should i',
-            'what if'
-        ];
+            case UserIntent.QUESTION:
+                return { type: 'discussion', canGenerateCode: false };
 
-        // Check for explicit build command
-        const wantsToBuild = buildTriggers.some(trigger => lowerMsg.includes(trigger));
+            case UserIntent.PLAN_REQUEST:
+                return { type: 'planning', canGenerateCode: false };
 
-        // Check for discussion indicators
-        const wantsToDiscuss = discussionTriggers.some(trigger => lowerMsg.includes(trigger));
+            case UserIntent.CODE_REQUEST:
+                // Only allow code generation if plan is approved
+                return {
+                    type: 'building',
+                    canGenerateCode: workspaceState.planStatus === 'approved'
+                };
 
-        // If message is very short, probably wants to chat
-        if (lowerMsg.length < 30 && !wantsToBuild) {
-            return { type: 'discussion', canGenerateCode: false };
+            case UserIntent.APPROVAL:
+                // Approval should trigger code generation if there's a plan
+                return {
+                    type: 'building',
+                    canGenerateCode: workspaceState.currentPlan !== null
+                };
+
+            case UserIntent.EDIT_PLAN:
+                return { type: 'planning', canGenerateCode: false };
+
+            default:
+                return { type: 'discussion', canGenerateCode: false };
         }
-
-        // Explicit build confirmation triggers - strict
-        const immediateExecutionTriggers = [
-            'execute plan',
-            'run code',
-            'start coding',
-            'build it',
-            'yes build this',
-            'proceed',
-            'approved'
-        ];
-
-        const wantsToExecute = immediateExecutionTriggers.some(trigger => lowerMsg.includes(trigger));
-
-        // If it's a "build me a [complex thing]" request, it should actually be PLANNING first.
-        // We only switch to building if they are confirming a plan or being very terse.
-        if (wantsToExecute) {
-            return { type: 'building', canGenerateCode: true };
-        }
-
-        // Even if they say "build", if it's a long description, it's a plan request.
-        if (wantsToBuild && lowerMsg.length > 50) {
-            return { type: 'planning', canGenerateCode: false };
-        }
-
-        // Fallback for short build commands
-        if (wantsToBuild) {
-            return { type: 'building', canGenerateCode: true };
-        }
-
-        // Wants to discuss/plan
-        if (wantsToDiscuss) {
-            return { type: 'planning', canGenerateCode: false };
-        }
-
-        // Default: If detailed description, assume planning
-        if (lowerMsg.length > 100 && !wantsToBuild) {
-            return { type: 'planning', canGenerateCode: false };
-        }
-
-        // Otherwise, discussion mode
-        return { type: 'discussion', canGenerateCode: false };
     }
 
     /**
