@@ -170,7 +170,7 @@ export class AIEngine {
         systemPrompt?: string
     ): Promise<AIResponse> {
         const id = assistantId || CONFIG.LANGDOCK_ASSISTANT_ID;
-        const key = CONFIG.LANGDOCK_API_KEY;
+        const key = CONFIG.LANGDOCK_API_KEY?.trim();
 
         if (!id || id === "HeftCoder Pro" || !key) {
             console.error(`[CRITICAL] Langdock Config Missing at Runtime! assistantId: ${id}, hasKey: ${!!key}`);
