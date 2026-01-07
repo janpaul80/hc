@@ -60,14 +60,15 @@ const SoraIcon = () => (
 );
 
 const MODELS = [
-    { id: "heftcoder-pro", name: "HeftCoder PRO (Sonnet 4.5)", icon: AnthropicIcon, color: "text-[#d97757]", pro: true },
-    { id: "heftcoder-plus", name: "HeftCoder Plus (Mistral)", icon: MistralIcon, color: "text-orange-400", pro: true },
-    { id: "ui-architect", name: "UI Architect", icon: Code2, color: "text-blue-400", pro: true },
-    { id: "debugger-pro", name: "Debugger Pro", icon: Zap, color: "text-orange-400", pro: true },
-    { id: "general-assistant", name: "General Assistant", icon: Sparkles, color: "text-gray-400", pro: false },
-    { id: "mistral-large", name: "Mistral Large 3", icon: MistralIcon, color: "text-orange-600", pro: true },
-    { id: "flux.2-pro", name: "Flux.2-Pro", icon: FluxIcon, color: "text-purple-500", pro: true },
-    { id: "sora", name: "Sora Video Gen", icon: SoraIcon, color: "text-purple-400", pro: true },
+    { id: "heftcoder-pro", name: "HeftCoder Pro", icon: AnthropicIcon, color: "text-[#d97757]", pro: true },
+    { id: "heftcoder-plus", name: "HeftCoder Plus", icon: MistralIcon, color: "text-orange-400", pro: true },
+    { id: "opus-4.5-reasoning", name: "Opus 4.5 Reasoning", icon: AnthropicIcon, color: "text-[#d97757]", pro: true },
+    { id: "claude-sonnet-4.5", name: "Claude Sonnet 4.5", icon: AnthropicIcon, color: "text-[#d97757]", pro: true },
+    { id: "chatgpt-5.1-fast", name: "ChatGPT 5.1 Fast", icon: OpenAIIcon, color: "text-green-400", pro: true },
+    { id: "gemini-2.5-flash", name: "Gemini 2.5 Flash", icon: MetaIcon, color: "text-blue-400", pro: true },
+    { id: "mistral-medium", name: "Mistral Medium", icon: MistralIcon, color: "text-orange-600", pro: true },
+    { id: "sora", name: "Sora", icon: SoraIcon, color: "text-purple-400", pro: true },
+    { id: "flux-2.5-pro", name: "Flux2.5 Pro", icon: FluxIcon, color: "text-purple-500", pro: true },
 ];
 
 export function ModelSelector({ value, onChange }: { value: string; onChange: (val: string) => void }) {
