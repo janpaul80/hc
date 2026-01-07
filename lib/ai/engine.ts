@@ -450,18 +450,6 @@ The output MUST be a single JSON object where keys are file paths and values are
                 response = await this.runMistral(prompt, contextStr);
                 break;
 
-            case "flux.2-pro":
-                response = await this.runFlux(prompt);
-                break;
-
-            case "sora":
-                response = await this.runSora(prompt);
-                break;
-
-            case "mistral-large":
-                response = await this.runMaaS(model, prompt, contextStr);
-                break;
-
             case "heft-orchestrator":
                 throw new Error("Azure OpenAI (Heft Orchestrator) has been deprecated in favor of HeftCoder PRO.");
 
