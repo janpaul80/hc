@@ -20,7 +20,7 @@ import {
 } from "lucide-react";
 import { ResizablePanelGroup, ResizablePanel, ResizableHandle } from "@/components/ui/resizable";
 import ModelSelector from "@/components/workspace/ModelSelector";
-import { PreviewPanel } from "@/components/workspace/PreviewPanel";
+import PreviewPanel from "@/components/workspace/PreviewPanel";
 import { ThinkingIndicator } from "@/components/workspace/ThinkingIndicator";
 import { StageProgress, ArtifactMessage } from "@/components/workspace/ChatArtifacts";
 import { ConversationalAgent } from "@/lib/agent/conversational";
