@@ -182,25 +182,28 @@ export class AIEngine {
         console.log(`[Langdock] Calling Agent: ${id} with Key: ${maskedKey}`);
 
         try {
-            const langdockMessages = [];
+            const langdockMessages: any[] = [];
 
-            // 1. Add System Prompt if provided
-            if (systemPrompt) {
-                langdockMessages.push({ role: "system", content: systemPrompt });
-            }
-
-            // 2. Add History
+            // 1. Add History (Translated to Langdock Roles)
             history.forEach(m => {
+                const role = m.role === 'ai' || m.role === 'assistant' ? 'assistant' : 'user';
                 langdockMessages.push({
-                    role: m.role === 'ai' ? 'assistant' : 'user',
+                    role,
                     content: m.content
                 });
             });
 
-            // 3. Add latest prompt with context
+            // 2. Prepare the latest content (System Prompt + User Prompt + Current Context)
+            let combinedPrompt = "";
+            if (systemPrompt) {
+                combinedPrompt += `[SYSTEM INSTRUCTIONS]:\n${systemPrompt}\n\n`;
+            }
+            combinedPrompt += `Instruction: ${prompt}\n\nExisting context (current files):\n${context}`;
+
+            // 3. Add latest prompt
             langdockMessages.push({
                 role: "user",
-                content: `Instruction: ${prompt}\n\nExisting context (current files):\n${context}`
+                content: combinedPrompt
             });
 
             const payload = {
