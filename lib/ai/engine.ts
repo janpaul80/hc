@@ -450,9 +450,6 @@ The output MUST be a single JSON object where keys are file paths and values are
                 response = await this.runMistral(prompt, contextStr);
                 break;
 
-            case "heft-orchestrator":
-                throw new Error("Azure OpenAI (Heft Orchestrator) has been deprecated in favor of HeftCoder PRO.");
-
             default:
                 throw new Error(`Unsupported Model Selected: ${model}`);
         }
