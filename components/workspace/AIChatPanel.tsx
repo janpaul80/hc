@@ -321,11 +321,7 @@ export default function AIChatPanel({
                     <span className="text-[10px] font-bold text-zinc-700 uppercase tracking-widest">{chatInput.length} / 2000</span>
                 </div>
             </div>
+
         </div>
     );
 }
-
-// Simple internal icon for demo
-const Loader2 = ({ className }: { className?: string }) => (
-    <svg className={className} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 12a9 9 0 1 1-6.219-8.56" /></svg>
-);
