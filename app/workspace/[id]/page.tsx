@@ -272,18 +272,41 @@ export default function Workspace(props: { params: Promise<{ id: string }> }) {
                         />
 
                         <div className="flex items-center bg-[#141414] rounded-xl p-1 border border-white/5">
-                            <button className="flex items-center gap-2 px-3 py-1.5 text-[10px] font-bold text-zinc-400 hover:text-white hover:bg-white/5 rounded-lg transition-all uppercase tracking-tight">
-                                <GitBranch className="w-3.5 h-3.5" />
+                            <button className="group relative flex items-center gap-2 px-3 py-1.5 text-[10px] font-bold text-zinc-400 hover:text-white hover:bg-white/5 rounded-lg transition-all uppercase tracking-tight">
+                                <Github className="w-3.5 h-3.5" />
                                 Push
+                                <span className="absolute top-full mt-2 left-1/2 -translate-x-1/2 px-2 py-1 bg-black border border-white/10 rounded text-[9px] text-zinc-300 opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-50 pointer-events-none">Push to GitHub</span>
                             </button>
-                            <button className="flex items-center gap-2 px-3 py-1.5 text-[10px] font-bold text-zinc-400 hover:text-white hover:bg-white/5 rounded-lg transition-all uppercase tracking-tight">
-                                <Rocket className="w-3.5 h-3.5" />
+                            <button className="group relative flex items-center gap-2 px-3 py-1.5 text-[10px] font-bold text-zinc-400 hover:text-white hover:bg-white/5 rounded-lg transition-all uppercase tracking-tight">
+                                <svg className="w-3.5 h-3.5 fill-current" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M12 1L24 22H0L12 1Z" /></svg>
                                 Deploy
+                                <span className="absolute top-full mt-2 left-1/2 -translate-x-1/2 px-2 py-1 bg-black border border-white/10 rounded text-[9px] text-zinc-300 opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-50 pointer-events-none">Deploy to Vercel</span>
                             </button>
-                            <button className="flex items-center gap-2 px-4 py-1.5 text-[10px] font-bold text-white bg-orange-600 hover:bg-orange-500 rounded-lg transition-all shadow-lg shadow-orange-900/20 uppercase tracking-tight">
-                                <Globe className="w-3.5 h-3.5" />
-                                Publish
-                            </button>
+
+                            <div className="relative group">
+                                <button className="flex items-center gap-2 px-4 py-1.5 text-[10px] font-bold text-white bg-orange-600 hover:bg-orange-500 rounded-lg transition-all shadow-lg shadow-orange-900/20 uppercase tracking-tight">
+                                    <Globe className="w-3.5 h-3.5" />
+                                    Publish
+                                    <ChevronDown className="w-3 h-3 ml-1 opacity-70" />
+                                </button>
+                                {/* Dropdown Menu (Pure CSS Group Hover) */}
+                                <div className="absolute top-full right-0 mt-2 w-48 bg-[#0a0a0a] border border-white/10 rounded-xl shadow-2xl p-1 opacity-0 group-hover:opacity-100 transition-all pointer-events-none group-hover:pointer-events-auto scale-95 group-hover:scale-100 origin-top-right z-50 flex flex-col gap-1">
+                                    <button className="flex items-center gap-2 px-3 py-2 text-xs font-medium text-zinc-300 hover:bg-white/5 hover:text-white rounded-lg transition-colors text-left w-full">
+                                        <div className="w-4 h-4 rounded-full bg-orange-500/20 flex items-center justify-center text-[10px] text-orange-500">h</div>
+                                        <div>
+                                            <div className="text-[10px] font-bold uppercase tracking-wider text-zinc-500 mb-0.5">Subdomain</div>
+                                            project.heftcoder.icu
+                                        </div>
+                                    </button>
+                                    <button className="flex items-center gap-2 px-3 py-2 text-xs font-medium text-zinc-300 hover:bg-white/5 hover:text-white rounded-lg transition-colors text-left w-full">
+                                        <div className="w-4 h-4 rounded-full bg-purple-500/20 flex items-center justify-center text-[10px] text-purple-500">@</div>
+                                        <div>
+                                            <div className="text-[10px] font-bold uppercase tracking-wider text-zinc-500 mb-0.5">Custom Domain</div>
+                                            yourdomain.com
+                                        </div>
+                                    </button>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </header>

@@ -217,7 +217,13 @@ export default function AIChatPanel({
                 {isGenerating && (
                     <div className="flex gap-4 animate-in fade-in slide-in-from-bottom-2">
                         <div className="w-8 h-8 rounded-full bg-orange-500/10 border border-orange-500/20 flex items-center justify-center shrink-0">
-                            <Loader2 className="w-4 h-4 text-orange-500 animate-spin" />
+                            {/* Official HeftCoder Icon with Glow/Pulse */}
+                            <div className="relative">
+                                <div className="absolute inset-0 bg-orange-500 blur-lg opacity-20 animate-pulse"></div>
+                                <svg className="w-4 h-4 text-orange-500 animate-pulse" viewBox="0 0 24 24" fill="currentColor">
+                                    <path d="M13 3L6 13h5l-2 8 7-10h-5l4-8z" />
+                                </svg>
+                            </div>
                         </div>
                         <div className="flex items-center gap-1 bg-[#0a0a0a] px-4 py-3 rounded-2xl border border-[#1f1f1f]">
                             <div className="w-1.5 h-1.5 bg-zinc-600 rounded-full animate-bounce [animation-delay:-0.3s]" />
@@ -231,10 +237,10 @@ export default function AIChatPanel({
 
             {/* Input Area */}
             <div className="p-5 bg-[#0a0a0a] border-t border-[#1a1a1a]">
-                <div className="relative flex items-center bg-[#0d0d0d] rounded-xl border border-[#1f1f1f] focus-within:border-orange-500/50 transition-colors shadow-lg shadow-black/50">
+                <div className="relative flex items-end bg-[#0d0d0d] rounded-xl border border-[#1f1f1f] focus-within:border-orange-500/50 transition-colors shadow-lg shadow-black/50">
                     <button
                         onClick={handleFileClick}
-                        className="p-3 text-zinc-500 hover:text-zinc-300 transition-colors"
+                        className="p-3 mb-0.5 text-zinc-500 hover:text-zinc-300 transition-colors"
                     >
                         <Paperclip className="w-4 h-4" />
                     </button>
@@ -246,17 +252,27 @@ export default function AIChatPanel({
                         multiple
                     />
 
-                    <input
-                        type="text"
+                    <textarea
                         value={chatInput}
-                        onChange={(e) => setChatInput(e.target.value)}
-                        onKeyDown={handleKeyPress}
+                        onChange={(e) => {
+                            setChatInput(e.target.value);
+                            e.target.style.height = 'auto';
+                            e.target.style.height = `${Math.min(e.target.scrollHeight, 200)}px`;
+                        }}
+                        onKeyDown={(e) => {
+                            if (e.key === 'Enter' && !e.shiftKey) {
+                                e.preventDefault();
+                                if (chatInput.trim()) onSendMessage(chatInput);
+                            }
+                        }}
+                        rows={1}
                         placeholder={currentStage === 'approving' ? "Review and approve plan..." : "Brief the engine..."}
-                        className="flex-1 bg-transparent border-0 focus:ring-0 text-sm font-medium text-zinc-200 placeholder:text-zinc-700 py-3.5"
+                        className="flex-1 bg-transparent border-0 focus:ring-0 text-sm font-medium text-zinc-200 placeholder:text-zinc-700 py-3.5 px-0 min-h-[44px] max-h-[200px] resize-none overflow-y-auto"
                         disabled={isGenerating}
+                        style={{ height: 'auto' }}
                     />
 
-                    <div className="flex items-center gap-1 pr-2">
+                    <div className="flex items-center gap-1 pr-2 pb-2">
                         <button
                             onClick={handleVoiceClick}
                             className={cn(
