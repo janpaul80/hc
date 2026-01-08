@@ -93,8 +93,8 @@ export default function PreviewPanel({ isBuilding, isReady, port, error, buildSt
                         </div>
 
                         <div className="flex flex-col items-center gap-3">
-                            <h2 className="text-xs font-medium text-white text-center">
-                                HeftCoder is working...
+                            <h2 className="text-xs font-medium text-white text-center animate-pulse">
+                                {buildStatus || "HeftCoder is working..."}
                             </h2>
 
                             {/* Simple clean loading dots */}

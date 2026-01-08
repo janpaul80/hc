@@ -65,6 +65,7 @@ export default function Workspace(props: { params: Promise<{ id: string }> }) {
     const [currentIntent, setCurrentIntent] = useState<UserIntent | null>(null);
     const [agentEvents, setAgentEvents] = useState<AgentEvent[]>([]);
     const [hasBuilt, setHasBuilt] = useState(false);
+    const [buildStep, setBuildStep] = useState<string>('');
 
     const chatEndRef = useRef<HTMLDivElement>(null);
     const fileInputRef = useRef<HTMLInputElement>(null);
@@ -138,25 +139,49 @@ export default function Workspace(props: { params: Promise<{ id: string }> }) {
             setTimeout(() => {
                 setMessages(prev => [...prev, { role: "ai", content: "Hey 👋 What would you like to build or change today?" }]);
                 setIsGenerating(false);
-            }, 600); // Small fake delay for natural feel
+            }, 600);
             return;
         }
 
         const mode = ConversationalAgent.intentToMode(intent, workspaceState);
         setAgentMode(mode.type);
+        setCurrentIntent(intent); // Ensure intent is set
 
         if (intent === UserIntent.QUESTION) {
             setThinkingAction('thinking');
-            setCurrentStage('planning'); // Or 'discussion' visuals if you have them, reusing planning for now
+            setCurrentStage('planning');
         } else if (intent === UserIntent.PLAN_REQUEST || intent === UserIntent.EDIT_PLAN) {
             setThinkingAction('thinking');
             setCurrentStage('planning');
-        } else if (intent === UserIntent.APPROVAL) {
+        } else if (intent === UserIntent.APPROVAL || intent === UserIntent.CODE_REQUEST) {
             setThinkingAction('writing');
             setCurrentStage('coding');
-        } else if (intent === UserIntent.CODE_REQUEST) {
-            setThinkingAction('writing');
-            setCurrentStage('coding');
+
+            // Start Build Simulation
+            setHasBuilt(false); // Reset built state
+            const steps = [
+                "Initializing Vibe Engine...",
+                "Analyzing architectural requirements...",
+                "Scaffolding Next.js 14 project structure...",
+                "Resolving node_modules and dependencies...",
+                "Generating core components...",
+                "Writing Tailwind CSS utilities...",
+                "Implementing API routes...",
+                "Finalizing workspace configuration..."
+            ];
+            let stepIndex = 0;
+            setBuildStep(steps[0]);
+
+            // Store interval ID in a ref if needed, or just let it run until response (but we need to clear it)
+            // Since this function is async, we can use a local variable for the interval but cleaning it up requires a ref.
+            // For simplicity in this function scope:
+            const stepInterval = setInterval(() => {
+                stepIndex = (stepIndex + 1) % steps.length;
+                setBuildStep(steps[stepIndex]);
+            }, 2000); // 2 seconds per step for "thinking" feel
+
+            // Store interval cleaner in a temp variable to clear after await
+            (window as any).__buildInterval = stepInterval;
         }
 
         try {
@@ -211,6 +236,7 @@ export default function Workspace(props: { params: Promise<{ id: string }> }) {
             console.error("Generation error:", error);
             setMessages(prev => [...prev, { role: "ai", content: `❌ Error: ${error.message}` }]);
         } finally {
+            if ((window as any).__buildInterval) clearInterval((window as any).__buildInterval);
             setIsGenerating(false);
         }
     };
@@ -397,6 +423,7 @@ export default function Workspace(props: { params: Promise<{ id: string }> }) {
                                 <PreviewPanel
                                     isBuilding={!hasBuilt || (isGenerating && currentStage === 'coding')}
                                     isReady={!isGenerating}
+                                    buildStatus={buildStep}
                                     port={3000}
                                 />
                             </ResizablePanel>
