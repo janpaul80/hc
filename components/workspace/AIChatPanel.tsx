@@ -251,7 +251,7 @@ export default function AIChatPanel({
                         value={chatInput}
                         onChange={(e) => setChatInput(e.target.value)}
                         onKeyDown={handleKeyPress}
-                        placeholder={currentStage === 'approval' ? "Review and approve plan..." : "Brief the engine..."}
+                        placeholder={currentStage === 'approving' ? "Review and approve plan..." : "Brief the engine..."}
                         className="flex-1 bg-transparent border-0 focus:ring-0 text-sm font-medium text-zinc-200 placeholder:text-zinc-700 py-3.5"
                         disabled={isGenerating}
                     />
