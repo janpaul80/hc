@@ -78,13 +78,10 @@ export function TerminalArtifact({ content, title = "heft-coder@dev:~/project" }
 export function ArtifactMessage({ content, onApprove }: { content: string, onApprove?: () => void }) {
     const [showThinking, setShowThinking] = useState(false);
 
-    // Pre-processing to handle [WAIT] tag and [THINKING] blocks
-    // Pre-processing to handle [WAIT], [EXEC] tags and [THINKING] blocks
-    let processedContent = content;
-    const hasWaitTag = processedContent.includes('[WAIT]');
-    const hasExecTag = processedContent.includes('[EXEC]');
-
-    processedContent = processedContent.replace('[WAIT]', '').replace('[EXEC]', '');
+    // Processing to handle [WAIT], [EXEC] tags and [THINKING] blocks
+    const hasWaitTag = (content || "").includes('[WAIT]');
+    const hasExecTag = (content || "").includes('[EXEC]');
+    const processedContent = (content || "").replace('[WAIT]', '').replace('[EXEC]', '');
 
     // Extract thinking blocks if present (basic regex, robust parser would be better but this works for now)
     // We are trusting the AI to use markdown well, so we might just let standard markdown handle most things

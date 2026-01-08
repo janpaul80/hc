@@ -220,7 +220,7 @@ export default function AIChatPanel({
                                 <div className="whitespace-pre-wrap">{msg.content}</div>
                             ) : (
                                 <ArtifactMessage
-                                    content={msg.content}
+                                    content={msg.content || ""}
                                     onApprove={onApprove}
                                 />
                             )}

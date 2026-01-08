@@ -60,11 +60,21 @@ export default function Workspace(props: { params: Promise<{ id: string }> }) {
     const [agentMode, setAgentMode] = useState<'discussion' | 'planning' | 'building'>('discussion');
     const [thinkingAction, setThinkingAction] = useState<'thinking' | 'writing' | 'building'>('thinking');
     const [currentStage, setCurrentStage] = useState<'planning' | 'approving' | 'coding'>('planning');
-    const [workspaceState, setWorkspaceState] = useState<WorkspaceState>({
-        id: projectId || "",
-        currentPlan: null,
-        planStatus: "none"
+    const [workspaceState, setWorkspaceState] = useState<WorkspaceState>(() => {
+        // Initialize workspaceState with projectId if available, otherwise an empty ID
+        return {
+            id: projectId || "",
+            currentPlan: null,
+            planStatus: "none"
+        };
     });
+
+    // Update workspace state ID when projectId resolves
+    useEffect(() => {
+        if (projectId && workspaceState.id === "") { // Only update if ID is not already set
+            setWorkspaceState(prev => ({ ...prev, id: projectId }));
+        }
+    }, [projectId, workspaceState.id]);
     const [currentIntent, setCurrentIntent] = useState<UserIntent | null>(null);
     const [agentEvents, setAgentEvents] = useState<AgentEvent[]>([]);
     const [hasBuilt, setHasBuilt] = useState(false);
